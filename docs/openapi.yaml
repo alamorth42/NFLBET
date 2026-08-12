@@ -1,0 +1,643 @@
+openapi: 3.0.3
+info:
+  title: NFL BET API
+  version: 0.1.0
+  description: >
+    API REST du SaaS NFL BET (Cloud Functions GCP / Firebase).
+    Toutes les routes exigent un **Firebase ID token** (`Authorization: Bearer <idToken>`).
+    Les réponses ont la forme `{ "data": ... }` en succès, `{ "error": { code, message } }` en erreur.
+    Le back est seul à écrire les scores/classements ; le front lit ces données en direct via Firestore.
+
+servers:
+  - url: https://europe-west1-{projectId}.cloudfunctions.net/api
+    description: Production (Cloud Functions)
+    variables:
+      projectId:
+        default: REMPLACER_PAR_TON_PROJECT_ID
+  - url: http://127.0.0.1:5001/{projectId}/europe-west1/api
+    description: Émulateur local
+    variables:
+      projectId:
+        default: REMPLACER_PAR_TON_PROJECT_ID
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Config
+    description: Métadonnées (catalogue des moteurs de bonus)
+  - name: Leagues
+    description: Ligues & adhésion
+  - name: Seasons
+    description: Saisons & participants
+  - name: Weeks & Matches
+    description: Semaines, matchs et résultats (admin)
+  - name: Bonuses
+    description: Configuration des bonus par semaine (admin)
+  - name: Entries
+    description: Grilles de pronostics (joueur)
+  - name: Scoring
+    description: Lock, saisie manuelle des stats, calcul des scores (admin)
+
+paths:
+  /config/engines:
+    get:
+      tags: [Config]
+      summary: Catalogue des moteurs de bonus
+      description: Renvoie les types de bonus disponibles + leurs champs de configuration (pour générer les formulaires admin).
+      responses:
+        "200":
+          description: Catalogue
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/EngineCatalogItem" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /leagues:
+    post:
+      tags: [Leagues]
+      summary: Créer une ligue
+      description: Le créateur devient automatiquement OWNER.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, example: "NFL BET" }
+                timezone: { type: string, default: "Europe/Paris" }
+                displayName: { type: string, example: "Maéric" }
+      responses:
+        "200":
+          description: Ligue créée
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LeagueCreated" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /leagues/{lid}/join:
+    post:
+      tags: [Leagues]
+      summary: Rejoindre une ligue (rôle PLAYER)
+      parameters:
+        - $ref: "#/components/parameters/lid"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                displayName: { type: string, example: "Khandar" }
+      responses:
+        "200":
+          description: Rejoint
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties: { joined: { type: boolean } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /leagues/{lid}/seasons:
+    post:
+      tags: [Seasons]
+      summary: Créer une saison (admin)
+      parameters:
+        - $ref: "#/components/parameters/lid"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, example: "2025/26" }
+                startWeek: { type: integer, default: 1 }
+                endWeek: { type: integer, default: 18 }
+      responses:
+        "200":
+          description: Saison créée
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties: { seasonId: { type: string } }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /leagues/{lid}/seasons/{sid}/participants:
+    post:
+      tags: [Seasons]
+      summary: Ajouter un participant à la saison (admin)
+      description: Requis pour que le lock puisse marquer en retard les joueurs sans grille.
+      parameters:
+        - $ref: "#/components/parameters/lid"
+        - $ref: "#/components/parameters/sid"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [uid]
+              properties:
+                uid: { type: string, example: "uid_khandar" }
+      responses:
+        "200":
+          description: Ajouté
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties: { added: { type: string } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /leagues/{lid}/seasons/{sid}/weeks/{w}/matches:
+    post:
+      tags: [Weeks & Matches]
+      summary: Créer les matchs de la semaine (admin)
+      description: Saisie manuelle / import en bloc. Crée aussi la semaine si absente (état UPCOMING).
+      parameters:
+        - $ref: "#/components/parameters/lid"
+        - $ref: "#/components/parameters/sid"
+        - $ref: "#/components/parameters/w"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [matches]
+              properties:
+                matches:
+                  type: array
+                  items: { $ref: "#/components/schemas/MatchInput" }
+              example:
+                matches:
+                  - { homeTeamId: "KC", awayTeamId: "BUF", kickoffAt: "2025-10-19T17:00:00Z" }
+                  - { homeTeamId: "DAL", awayTeamId: "PHI" }
+      responses:
+        "200":
+          description: Matchs créés
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      created: { type: array, items: { type: string } }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /leagues/{lid}/seasons/{sid}/weeks/{w}/open:
+    post:
+      tags: [Weeks & Matches]
+      summary: Ouvrir la semaine à la saisie (admin)
+      parameters:
+        - $ref: "#/components/parameters/lid"
+        - $ref: "#/components/parameters/sid"
+        - $ref: "#/components/parameters/w"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                deadlineAt: { type: string, format: date-time, example: "2025-10-16T10:00:00Z" }
+                formOpenAt: { type: string, format: date-time }
+      responses:
+        "200":
+          description: Semaine ouverte
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties: { state: { type: string, example: "OPEN" } }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /leagues/{lid}/seasons/{sid}/matches/{mid}/result:
+    put:
+      tags: [Weeks & Matches]
+      summary: Saisir / corriger le résultat d'un match (admin)
+      description: Le back déduit vainqueur et écart, passe le match en FINAL.
+      parameters:
+        - $ref: "#/components/parameters/lid"
+        - $ref: "#/components/parameters/sid"
+        - name: mid
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [homeScore, awayScore]
+              properties:
+                homeScore: { type: integer, example: 24 }
+                awayScore: { type: integer, example: 21 }
+      responses:
+        "200":
+          description: Résultat enregistré
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties: { winnerTeamId: { type: string, example: "KC" } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /leagues/{lid}/seasons/{sid}/weeks/{w}/bonuses:
+    post:
+      tags: [Bonuses]
+      summary: Ajouter / configurer un bonus pour la semaine (admin)
+      description: >
+        `config` est validée par le `configSchema` Zod du moteur `type`.
+        Voir /config/engines pour les types et leurs champs.
+      parameters:
+        - $ref: "#/components/parameters/lid"
+        - $ref: "#/components/parameters/sid"
+        - $ref: "#/components/parameters/w"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BonusInput" }
+            examples:
+              teamWager:
+                summary: Quitte ou Double (TEAM_WAGER)
+                value:
+                  type: "TEAM_WAGER"
+                  title: "Quitte ou Double"
+                  optional: true
+                  config: { optional: true, soleWinPoints: 2, sharedWinPoints: 1, losePoints: -1 }
+              trustYourWr:
+                summary: Trust Your WR (PLAYER_STAT_PICKS)
+                value:
+                  type: "PLAYER_STAT_PICKS"
+                  title: "Trust Your WR"
+                  config: { selectionMin: 1, selectionMax: 3, entity: "PLAYER", statKey: "ANY_TD", threshold: 1, scoring: "GATED_EACH", pointsPerHit: 1, cap: 3, dedupe: "NONE" }
+      responses:
+        "200":
+          description: Bonus créé
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties: { bonusId: { type: string } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /leagues/{lid}/seasons/{sid}/entries/{w}:
+    put:
+      tags: [Entries]
+      summary: Soumettre sa grille (joueur)
+      description: >
+        Upsert de la grille du joueur pour la semaine. La semaine doit être OPEN.
+        Les réponses bonus sont validées par le `answerSchema` du moteur.
+        Après la deadline, l'état passe à LATE.
+      parameters:
+        - $ref: "#/components/parameters/lid"
+        - $ref: "#/components/parameters/sid"
+        - $ref: "#/components/parameters/w"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EntryInput" }
+            example:
+              gamePicks: { "m_kc_buf": "KC", "m_dal_phi": "PHI" }
+              bonusAnswers:
+                bn_trustwr_w6: { players: ["p_jefferson", "p_collins"] }
+      responses:
+        "200":
+          description: Grille enregistrée
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      state: { type: string, enum: [SUBMITTED, LATE] }
+        "400":
+          description: Semaine verrouillée ou réponse bonus invalide
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              examples:
+                weekLocked: { value: { error: { code: "WEEK_LOCKED", message: "La semaine n'est pas ouverte" } } }
+                invalidBonus: { value: { error: { code: "INVALID_BONUS_ANSWER", message: "Bonus bn_...: ..." } } }
+                invalidReference: { value: { error: { code: "INVALID_REFERENCE", message: "Références inconnues: catalog/players/p_xxx" } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /leagues/{lid}/seasons/{sid}/weeks/{w}/lock:
+    post:
+      tags: [Scoring]
+      summary: Verrouiller la semaine + révéler les grilles (admin)
+      description: >
+        Passe la semaine en LOCKED, pose `weekState=LOCKED` sur les entries (déclenche la révélation),
+        et crée des grilles LATE pour les participants n'ayant pas soumis.
+      parameters:
+        - $ref: "#/components/parameters/lid"
+        - $ref: "#/components/parameters/sid"
+        - $ref: "#/components/parameters/w"
+      responses:
+        "200":
+          description: Verrouillé
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties: { locked: { type: boolean } }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /leagues/{lid}/seasons/{sid}/weeks/{w}/stat-todo:
+    get:
+      tags: [Scoring]
+      summary: Stats à saisir en mode manuel (admin)
+      description: >
+        Renvoie exactement les cases de stats à remplir, calculées à partir des
+        entités réellement sélectionnées par les participants dans les bonus actifs.
+      parameters:
+        - $ref: "#/components/parameters/lid"
+        - $ref: "#/components/parameters/sid"
+        - $ref: "#/components/parameters/w"
+      responses:
+        "200":
+          description: Liste des stats à renseigner
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/StatTodoItem" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /leagues/{lid}/seasons/{sid}/weeks/{w}/stats-override:
+    put:
+      tags: [Scoring]
+      summary: Saisir les stats joueurs (admin, source MANUAL)
+      parameters:
+        - $ref: "#/components/parameters/lid"
+        - $ref: "#/components/parameters/sid"
+        - $ref: "#/components/parameters/w"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [stats]
+              properties:
+                stats:
+                  type: array
+                  items: { $ref: "#/components/schemas/PlayerStatInput" }
+            example:
+              stats:
+                - { playerId: "p_jefferson", teamId: "MIN", position: "WR", anyTd: 1 }
+                - { playerId: "p_allen", teamId: "BUF", position: "QB", startedAtQB: true, passingInt: 2 }
+      responses:
+        "200":
+          description: Stats enregistrées
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties: { saved: { type: integer } }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /leagues/{lid}/seasons/{sid}/weeks/{w}/score:
+    post:
+      tags: [Scoring]
+      summary: Calculer les scores de la semaine (admin)
+      description: >
+        Idempotent : recalcule tout (base + Perfect Week + bonus + pénalités),
+        écrit les scores, passe la semaine en PUBLISHED et recalcule le classement.
+      parameters:
+        - $ref: "#/components/parameters/lid"
+        - $ref: "#/components/parameters/sid"
+        - $ref: "#/components/parameters/w"
+      responses:
+        "200":
+          description: Scores publiés
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      week: { type: integer }
+                      scored: { type: integer, description: "nombre de joueurs scorés" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Firebase ID token (`getIdToken()` côté client).
+
+  parameters:
+    lid:
+      name: lid
+      in: path
+      required: true
+      description: ID de la ligue
+      schema: { type: string }
+    sid:
+      name: sid
+      in: path
+      required: true
+      description: ID de la saison
+      schema: { type: string }
+    w:
+      name: w
+      in: path
+      required: true
+      description: Numéro de semaine (1..18)
+      schema: { type: integer, minimum: 1, maximum: 18 }
+
+  responses:
+    Unauthorized:
+      description: Token manquant ou invalide
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { error: { code: "UNAUTHENTICATED", message: "Missing bearer token" } }
+    Forbidden:
+      description: Droits insuffisants (rôle requis)
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { error: { code: "FORBIDDEN", message: "Admin only" } }
+    BadRequest:
+      description: Requête invalide
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    NotFound:
+      description: Ressource introuvable
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { error: { code: "NOT_FOUND", message: "Match introuvable" } }
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code: { type: string, example: "FORBIDDEN" }
+            message: { type: string }
+
+    LeagueCreated:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            leagueId: { type: string }
+
+    EngineCatalogItem:
+      type: object
+      properties:
+        type: { type: string, example: "PLAYER_STAT_PICKS" }
+        title: { type: string }
+        description: { type: string }
+        playerInput: { type: boolean, description: "true si le joueur doit saisir une réponse" }
+        configFields:
+          type: array
+          items:
+            type: object
+            properties:
+              key: { type: string }
+              type: { type: string, enum: [number, boolean, enum, json] }
+              default: {}
+              options:
+                type: array
+                items: { type: string }
+
+    MatchInput:
+      type: object
+      required: [homeTeamId, awayTeamId]
+      properties:
+        homeTeamId: { type: string, example: "KC" }
+        awayTeamId: { type: string, example: "BUF" }
+        kickoffAt: { type: string, format: date-time, nullable: true }
+
+    BonusInput:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          description: Clé du moteur de bonus
+          enum:
+            - PERFECT_WEEK
+            - GAME_OF_THE_WEEK
+            - PERIOD_LEADER
+            - TEAM_WAGER
+            - UPSET
+            - PLAYER_STAT_PICKS
+            - STAT_LEADERBOARD
+            - MATCH_THE_LEADER
+            - TEAM_STAT_QUESTIONS
+            - POOL_COMPETITION
+            - DUO_COMPETITION
+            - LINKED_PARLAY
+            - CUMULATIVE_COMBO
+        title: { type: string }
+        optional: { type: boolean, default: false }
+        config:
+          type: object
+          description: Configuration propre au moteur (validée côté back).
+          additionalProperties: true
+        runtime:
+          type: object
+          description: Données figées à la config (pools, duos…).
+          additionalProperties: true
+
+    EntryInput:
+      type: object
+      properties:
+        gamePicks:
+          type: object
+          description: matchId → teamId pronostiqué vainqueur
+          additionalProperties: { type: string }
+        bonusAnswers:
+          type: object
+          description: bonusId → payload de réponse (schéma selon le type de bonus)
+          additionalProperties: true
+
+    StatTodoItem:
+      type: object
+      properties:
+        entityType: { type: string, enum: [PLAYER, MATCH_TE, MATCH] }
+        entityId: { type: string }
+        statKey: { type: string, example: "ANY_TD" }
+        label: { type: string, example: "ANY_TD de p_jefferson" }
+
+    PlayerStatInput:
+      type: object
+      required: [playerId]
+      properties:
+        playerId: { type: string }
+        teamId: { type: string, nullable: true }
+        matchId: { type: string, nullable: true }
+        position: { type: string, enum: [QB, RB, WR, TE, K, OTHER], default: OTHER }
+        startedAtQB: { type: boolean, default: false }
+        anyTd: { type: integer, default: 0 }
+        receivingTd: { type: integer, default: 0 }
+        rushingTd: { type: integer, default: 0 }
+        rushingYards: { type: integer, default: 0 }
+        passingInt: { type: integer, default: 0 }
+        fgLongest: { type: integer, nullable: true }

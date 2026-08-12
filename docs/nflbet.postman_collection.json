@@ -1,0 +1,729 @@
+{
+  "info": {
+    "_postman_id": "nflbet-0001-0001-0001-nflbet000001",
+    "name": "NFL BET API",
+    "description": "Workflow complet d'une semaine NFL BET (mode manuel v1).\n\n## Mise en route\n1. Onglet **Variables** : renseigne `baseUrl` (URL de ta fonction `api`), et pour l'auth soit :\n   - `firebaseApiKey` + `testEmail` + `testPassword` puis lance **0. Auth > Sign in** (capture l'idToken automatiquement), soit\n   - colle directement un `idToken` (obtenu depuis ton app).\n2. Assure-toi d'avoir déployé le back et lancé `seed:teams` + `import:players`.\n3. Exécute les dossiers **dans l'ordre** (1 → 6). Les IDs (leagueId, seasonId, matchId, bonusId) se capturent tout seuls.\n\nAuth : Bearer {{idToken}} au niveau collection.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{idToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://europe-west1-REMPLACER.cloudfunctions.net/api"
+    },
+    {
+      "key": "firebaseApiKey",
+      "value": ""
+    },
+    {
+      "key": "testEmail",
+      "value": ""
+    },
+    {
+      "key": "testPassword",
+      "value": ""
+    },
+    {
+      "key": "idToken",
+      "value": ""
+    },
+    {
+      "key": "playerUid",
+      "value": ""
+    },
+    {
+      "key": "leagueId",
+      "value": ""
+    },
+    {
+      "key": "seasonId",
+      "value": ""
+    },
+    {
+      "key": "week",
+      "value": "1"
+    },
+    {
+      "key": "matchId",
+      "value": ""
+    },
+    {
+      "key": "bonusId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "0. Auth (obtenir un idToken)",
+      "item": [
+        {
+          "name": "Sign in (Firebase email/password)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={{firebaseApiKey}}",
+              "protocol": "https",
+              "host": [
+                "identitytoolkit",
+                "googleapis",
+                "com"
+              ],
+              "path": [
+                "v1",
+                "accounts:signInWithPassword"
+              ],
+              "query": [
+                {
+                  "key": "key",
+                  "value": "{{firebaseApiKey}}"
+                }
+              ]
+            },
+            "description": "Nécessite le provider Email/Password activé + un utilisateur de test créé. Capture idToken et playerUid.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\",\n  \"returnSecureToken\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "if (j.idToken) { pm.collectionVariables.set('idToken', j.idToken); pm.collectionVariables.set('playerUid', j.localId); }",
+                  "pm.test('idToken reçu', () => pm.expect(j.idToken, JSON.stringify(j)).to.be.a('string'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "1. Config",
+      "item": [
+        {
+          "name": "GET /config/engines",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/config/engines",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "config",
+                "engines"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('pas d\\'erreur API', () => pm.expect(pm.response.code, pm.response.text()).to.be.below(400));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Setup ligue & saison",
+      "item": [
+        {
+          "name": "Créer la ligue",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leagues",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leagues"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"NFL BET (test)\",\n  \"timezone\": \"Europe/Paris\",\n  \"displayName\": \"Commish\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('pas d\\'erreur API', () => pm.expect(pm.response.code, pm.response.text()).to.be.below(400));",
+                  "pm.collectionVariables.set('leagueId', pm.response.json().data.leagueId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Créer la saison",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leagues/{{leagueId}}/seasons",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leagues",
+                "{{leagueId}}",
+                "seasons"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"2026/27\",\n  \"startWeek\": 1,\n  \"endWeek\": 18\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('pas d\\'erreur API', () => pm.expect(pm.response.code, pm.response.text()).to.be.below(400));",
+                  "pm.collectionVariables.set('seasonId', pm.response.json().data.seasonId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ajouter un participant (moi)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leagues/{{leagueId}}/seasons/{{seasonId}}/participants",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leagues",
+                "{{leagueId}}",
+                "seasons",
+                "{{seasonId}}",
+                "participants"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"uid\": \"{{playerUid}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('pas d\\'erreur API', () => pm.expect(pm.response.code, pm.response.text()).to.be.below(400));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Configurer la semaine",
+      "item": [
+        {
+          "name": "Créer les matchs",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leagues/{{leagueId}}/seasons/{{seasonId}}/weeks/{{week}}/matches",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leagues",
+                "{{leagueId}}",
+                "seasons",
+                "{{seasonId}}",
+                "weeks",
+                "{{week}}",
+                "matches"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"matches\": [\n    {\n      \"homeTeamId\": \"BUF\",\n      \"awayTeamId\": \"KC\",\n      \"kickoffAt\": \"2026-09-10T23:15:00Z\"\n    },\n    {\n      \"homeTeamId\": \"PHI\",\n      \"awayTeamId\": \"DAL\",\n      \"kickoffAt\": \"2026-09-13T17:00:00Z\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('pas d\\'erreur API', () => pm.expect(pm.response.code, pm.response.text()).to.be.below(400));",
+                  "pm.collectionVariables.set('matchId', pm.response.json().data.created[0]);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Activer un bonus (Trust Your WR)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leagues/{{leagueId}}/seasons/{{seasonId}}/weeks/{{week}}/bonuses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leagues",
+                "{{leagueId}}",
+                "seasons",
+                "{{seasonId}}",
+                "weeks",
+                "{{week}}",
+                "bonuses"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"PLAYER_STAT_PICKS\",\n  \"title\": \"Trust Your WR\",\n  \"config\": {\n    \"selectionMin\": 1,\n    \"selectionMax\": 3,\n    \"entity\": \"PLAYER\",\n    \"statKey\": \"ANY_TD\",\n    \"threshold\": 1,\n    \"scoring\": \"GATED_EACH\",\n    \"pointsPerHit\": 1,\n    \"cap\": 3,\n    \"dedupe\": \"NONE\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('pas d\\'erreur API', () => pm.expect(pm.response.code, pm.response.text()).to.be.below(400));",
+                  "pm.collectionVariables.set('bonusId', pm.response.json().data.bonusId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ouvrir la semaine",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leagues/{{leagueId}}/seasons/{{seasonId}}/weeks/{{week}}/open",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leagues",
+                "{{leagueId}}",
+                "seasons",
+                "{{seasonId}}",
+                "weeks",
+                "{{week}}",
+                "open"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deadlineAt\": \"2026-09-10T22:00:00Z\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('pas d\\'erreur API', () => pm.expect(pm.response.code, pm.response.text()).to.be.below(400));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4. Soumettre une grille (joueur)",
+      "item": [
+        {
+          "name": "Soumettre ma grille",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leagues/{{leagueId}}/seasons/{{seasonId}}/entries/{{week}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leagues",
+                "{{leagueId}}",
+                "seasons",
+                "{{seasonId}}",
+                "entries",
+                "{{week}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"gamePicks\": {\n    \"{{matchId}}\": \"BUF\"\n  },\n  \"bonusAnswers\": {\n    \"{{bonusId}}\": {\n      \"players\": [\n        \"p_justin_jefferson\",\n        \"p_nico_collins\"\n      ]\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('pas d\\'erreur API', () => pm.expect(pm.response.code, pm.response.text()).to.be.below(400));",
+                  "pm.test('état SUBMITTED', () => pm.expect(pm.response.json().data.state).to.be.oneOf(['SUBMITTED','LATE']));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "5. Lock & résultats (admin)",
+      "item": [
+        {
+          "name": "Verrouiller la semaine",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leagues/{{leagueId}}/seasons/{{seasonId}}/weeks/{{week}}/lock",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leagues",
+                "{{leagueId}}",
+                "seasons",
+                "{{seasonId}}",
+                "weeks",
+                "{{week}}",
+                "lock"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('pas d\\'erreur API', () => pm.expect(pm.response.code, pm.response.text()).to.be.below(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Saisir le résultat du match",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leagues/{{leagueId}}/seasons/{{seasonId}}/matches/{{matchId}}/result",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leagues",
+                "{{leagueId}}",
+                "seasons",
+                "{{seasonId}}",
+                "matches",
+                "{{matchId}}",
+                "result"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"homeScore\": 24,\n  \"awayScore\": 21\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('pas d\\'erreur API', () => pm.expect(pm.response.code, pm.response.text()).to.be.below(400));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "6. Stats & scoring (admin)",
+      "item": [
+        {
+          "name": "Stats à saisir (stat-todo)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/leagues/{{leagueId}}/seasons/{{seasonId}}/weeks/{{week}}/stat-todo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leagues",
+                "{{leagueId}}",
+                "seasons",
+                "{{seasonId}}",
+                "weeks",
+                "{{week}}",
+                "stat-todo"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('pas d\\'erreur API', () => pm.expect(pm.response.code, pm.response.text()).to.be.below(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Saisir les stats",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leagues/{{leagueId}}/seasons/{{seasonId}}/weeks/{{week}}/stats-override",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leagues",
+                "{{leagueId}}",
+                "seasons",
+                "{{seasonId}}",
+                "weeks",
+                "{{week}}",
+                "stats-override"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stats\": [\n    {\n      \"playerId\": \"p_justin_jefferson\",\n      \"anyTd\": 1\n    },\n    {\n      \"playerId\": \"p_nico_collins\",\n      \"anyTd\": 1\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('pas d\\'erreur API', () => pm.expect(pm.response.code, pm.response.text()).to.be.below(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Calculer les scores",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leagues/{{leagueId}}/seasons/{{seasonId}}/weeks/{{week}}/score",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leagues",
+                "{{leagueId}}",
+                "seasons",
+                "{{seasonId}}",
+                "weeks",
+                "{{week}}",
+                "score"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('pas d\\'erreur API', () => pm.expect(pm.response.code, pm.response.text()).to.be.below(400));",
+                  "pm.test('scored > 0', () => pm.expect(pm.response.json().data.scored).to.be.above(0));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+# Firebase App Hosting — configuration du backend Next.js.
+# Le « root directory » du backend doit être `web` (l'app n'est pas à la racine
+# du dépôt). Ce fichier remplace `web/.env.local`, qui n'est pas versionné.
+
+runConfig:
+  # Ligue entre amis : une instance suffit largement, et minInstances: 0 évite
+  # de payer une instance qui tourne 24/7 entre deux semaines NFL.
+  minInstances: 0
+  maxInstances: 2
+  concurrency: 80
+  cpu: 1
+  memoryMiB: 512
+
+env:
+  # Config web Firebase. Ces valeurs sont publiques par construction : elles
+  # sont inlinées dans le bundle JS envoyé au navigateur (préfixe NEXT_PUBLIC_).
+  # La sécurité repose sur les security rules, pas sur leur confidentialité.
+  # BUILD est indispensable : Next les remplace à la compilation.
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: AIzaSyDiDA1CQWclacRulZ8RAt87F7RH-HN_VKs
+    availability: [BUILD, RUNTIME]
+
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: nflbet-71b92.firebaseapp.com
+    availability: [BUILD, RUNTIME]
+
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: nflbet-71b92
+    availability: [BUILD, RUNTIME]
+
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: nflbet-71b92.firebasestorage.app
+    availability: [BUILD, RUNTIME]
+
+  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    value: "562116480545"
+    availability: [BUILD, RUNTIME]
+
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    value: 1:562116480545:web:d3cef684244cac6acc9d60
+    availability: [BUILD, RUNTIME]
+
+  # API REST (Cloud Function `api`, région europe-west1).
+  - variable: NEXT_PUBLIC_API_BASE
+    value: https://europe-west1-nflbet-71b92.cloudfunctions.net/api
+    availability: [BUILD, RUNTIME]
+
+# Un secret côté serveur (clé provider payante, webhook…) ne se met JAMAIS ici :
+#   firebase apphosting:secrets:set NOM_DU_SECRET
+# puis on le référence avec `secret: NOM_DU_SECRET` au lieu de `value:`.

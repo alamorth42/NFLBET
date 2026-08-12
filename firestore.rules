@@ -1,0 +1,163 @@
+rules_version = '2';
+// ================================================================
+// NFL BET — Firestore Security Rules
+// ----------------------------------------------------------------
+// Principes :
+//  - Les SCORES ne sont JAMAIS écrits par le client (Cloud Functions only,
+//    via Admin SDK qui bypass ces rules).
+//  - Un joueur lit/écrit SON entry seulement tant que la semaine est OPEN.
+//  - Les entries des autres ne sont lisibles qu'après lock (révélation).
+//  - La config (matches, weeks, bonuses, résultats) est réservée OWNER/ADMIN.
+//  - Multi-tenant : tout est scoping par leagueId + appartenance `members`.
+//
+// NOTE PERF : on dénormalise `weekState` dans chaque entry (posé par la
+// Function) pour éviter un get() de la semaine à chaque lecture d'entry.
+// ================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- Helpers ----------
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function uid() {
+      return request.auth.uid;
+    }
+    // Appartenance à la ligue (doc members/{uid} existe et ACTIVE)
+    function memberDoc(lid) {
+      return get(/databases/$(database)/documents/leagues/$(lid)/members/$(uid()));
+    }
+    function isMember(lid) {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/leagues/$(lid)/members/$(uid()))
+        && memberDoc(lid).data.status == 'ACTIVE';
+    }
+    function role(lid) {
+      return memberDoc(lid).data.role;
+    }
+    function isAdmin(lid) {
+      return isMember(lid) && (role(lid) == 'OWNER' || role(lid) == 'ADMIN');
+    }
+    // Interdit au client de toucher aux champs calculés côté serveur
+    function noServerFields() {
+      return !request.resource.data.diff(resource.data).affectedKeys()
+        .hasAny(['state', 'submittedAt', 'weekState', 'flags', 'score', 'weekTotal']);
+    }
+
+    // ---------- Profils globaux ----------
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && userId == uid();
+    }
+
+    // ---------- Référentiels partagés (lecture seule client) ----------
+    // Collections de 1er niveau `teams` et `players` (écrites par les scripts/Functions).
+    match /teams/{teamId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+    match /players/{playerId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    // ---------- Index des codes d'invitation ----------
+    // Écrit et lu uniquement par les Functions (Admin SDK). Fermé au client :
+    // sinon n'importe qui pourrait énumérer les codes et rejoindre les ligues.
+    match /inviteCodes/{code} {
+      allow read, write: if false;
+    }
+
+    // ---------- Ligue ----------
+    match /leagues/{lid} {
+      allow read: if isMember(lid);
+      // création d'une ligue via API de préférence ; si autorisée ici :
+      allow create: if isSignedIn() && request.resource.data.ownerUid == uid();
+      allow update, delete: if isAdmin(lid);
+
+      // Membres
+      match /members/{memberUid} {
+        allow read: if isMember(lid);
+        // un user peut créer SON doc membre en rejoignant (flux invite),
+        // sinon seul un admin gère les membres.
+        allow create: if isAdmin(lid) || memberUid == uid();
+        allow update, delete: if isAdmin(lid);
+      }
+
+      // Invitations
+      match /invites/{inviteId} {
+        allow read: if isMember(lid);
+        allow write: if isAdmin(lid);
+      }
+
+      // ---------- Saison ----------
+      match /seasons/{sid} {
+        allow read: if isMember(lid);
+        allow write: if isAdmin(lid);
+
+        // Semaines : lecture membre, écriture admin (états gérés par Functions)
+        match /weeks/{wid} {
+          allow read: if isMember(lid);
+          allow write: if isAdmin(lid); // Functions bypass de toute façon
+        }
+
+        // Matchs & résultats : lecture membre, écriture admin/Functions
+        match /matches/{mid} {
+          allow read: if isMember(lid);
+          allow write: if isAdmin(lid);
+        }
+
+        // Bonus (config) : lecture membre, écriture admin
+        match /bonuses/{bid} {
+          allow read: if isMember(lid);
+          allow write: if isAdmin(lid);
+        }
+
+        // ---------- ENTRIES (grilles) — le cœur de la sécurité ----------
+        match /entries/{eid} {
+          // eid == "{uid}_W07" ; on borne la lecture des autres à après lock.
+          allow read: if isMember(lid) && (
+              resource.data.uid == uid()                       // ma grille : toujours
+              || resource.data.weekState == 'LOCKED'           // révélation
+              || resource.data.weekState == 'SCORING'
+              || resource.data.weekState == 'PUBLISHED'
+              || isAdmin(lid)                                  // admin voit tout
+          );
+
+          // Écriture UNIQUEMENT sur ma grille, semaine OPEN, sans champs serveur.
+          allow create, update: if isMember(lid)
+            && request.resource.data.uid == uid()
+            && request.resource.data.weekState == 'OPEN'
+            && noServerFields();
+
+          allow delete: if false;
+        }
+
+        // ---------- SCORES ----------
+        match /scores/{scoreId} {
+          allow read: if isMember(lid);
+          allow write: if false; // Cloud Functions only
+        }
+
+        // ---------- STANDINGS ----------
+        match /standings/{standingUid} {
+          allow read: if isMember(lid);
+          allow write: if false; // Cloud Functions only
+        }
+      }
+    }
+  }
+}
+
+// ================================================================
+// À VÉRIFIER / AJUSTER
+//  - `weekState` DOIT être posé sur chaque entry par une Function au moment
+//    du lock (OPEN -> LOCKED) sinon la révélation ne s'active pas. Alternative
+//    plus coûteuse : get() du doc weeks/{wid} dans la rule (facturé en lecture).
+//  - Le flag `flags.leaked` (pénalité -3) est réservé admin/Functions : il est
+//    listé dans noServerFields() pour bloquer le client.
+//  - La soumission "officielle" passe idéalement par l'API (PUT entries/:w) qui
+//    valide les réponses bonus (Zod) et pose submittedAt/state. Ces rules
+//    couvrent le cas d'écriture directe des brouillons.
+// ================================================================

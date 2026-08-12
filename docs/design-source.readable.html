@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+@keyframes popIn { 0% { transform: scale(0.85); opacity: 0; } 60% { transform: scale(1.06); } 100% { transform: scale(1); opacity: 1; } }
+.scr::-webkit-scrollbar { width: 0; }
+</style>
+</helmet>
+<div class="scr" style="width: 390px; height: 844px; overflow-y: auto; background: #0B0F0C; color: #E8EFE9; font-family: 'IBM Plex Sans', sans-serif; display: flex; flex-direction: column; position: relative;">
+
+  <sc-if value="{{ showChrome }}" hint-placeholder-val="{{ true }}">
+    <div style="position: sticky; top: 0; z-index: 5; background: rgba(11,15,12,0.92); backdrop-filter: blur(8px); border-bottom: 1px solid #2A342C; padding: 14px 18px 12px; display: flex; align-items: center; justify-content: space-between;">
+      <div style="display: flex; flex-direction: column; gap: 2px;">
+        <div style="font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 22px; line-height: 1; letter-spacing: 0.02em;">NFL BET</div>
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.12em; color: #6E7D74;">LES POTES DU DIMANCHE SOIR</div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #45D07A; border: 1px solid #45D07A; padding: 4px 7px;">WEEK 07</div>
+        <div style="width: 30px; height: 30px; background: #45D07A; color: #0B0F0C; font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 15px; display: flex; align-items: center; justify-content: center;">KV</div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isDash }}" hint-placeholder-val="{{ true }}">
+    <div style="flex: 1; display: flex; flex-direction: column; gap: 14px; padding: 18px 18px 110px;">
+      <div style="background: #141A16; border: 1px solid #2A342C; border-top: 3px solid #FFA92E; padding: 18px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: #6E7D74;">FORMULAIRE OUVERT</div>
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.1em; background: #45D07A; color: #0B0F0C; padding: 3px 7px;">OUVERT</div>
+        </div>
+        <div style="font-size: 13px; color: #93A197; margin-bottom: 4px;">Kickoff du Thursday Night dans</div>
+        <div style="font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 52px; line-height: 0.9; color: #FFA92E; letter-spacing: 0.02em;">{{ countdown }}</div>
+        <div style="height: 6px; background: #1D2620; margin-top: 14px; display: flex;">
+          <div style="width: 64%; background: #45D07A;"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-top: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #6E7D74;">
+          <div>9/14 MATCHS PRONOSTIQUÉS</div>
+          <div>0/5 BONUS</div>
+        </div>
+      </div>
+
+      <button onClick="{{ navGrid }}" style="width: 100%; min-height: 56px; background: #45D07A; color: #0B0F0C; border: none; font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 26px; letter-spacing: 0.03em; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;" style-hover="background: #5FE291;" style-active="transform: scale(0.985);">REMPLIR MA GRILLE →</button>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div style="background: #141A16; border: 1px solid #2A342C; padding: 14px;">
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.12em; color: #6E7D74; margin-bottom: 6px;">MON RANG</div>
+          <div style="display: flex; align-items: baseline; gap: 8px;">
+            <div style="font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 44px; line-height: 0.9;">3</div>
+            <div style="font-size: 13px; color: #45D07A;">▲ 2</div>
+          </div>
+          <div style="font-size: 12px; color: #93A197; margin-top: 4px;">sur 12 joueurs</div>
+        </div>
+        <div style="background: #141A16; border: 1px solid #2A342C; padding: 14px;">
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.12em; color: #6E7D74; margin-bottom: 6px;">MES POINTS</div>
+          <div style="display: flex; align-items: baseline; gap: 8px;">
+            <div style="font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 44px; line-height: 0.9; color: #FFA92E;">134</div>
+            <div style="font-size: 13px; color: #45D07A;">+21</div>
+          </div>
+          <div style="font-size: 12px; color: #93A197; margin-top: 4px;">semaine dernière</div>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 6px;">
+        <div style="font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 24px; letter-spacing: 0.02em;">LES BONUS DE LA SEMAINE</div>
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #6E7D74;">5</div>
+      </div>
+
+      <sc-for list="{{ bonusPreview }}" as="b" hint-placeholder-count="3">
+        <div style="background: #141A16; border: 1px solid #2A342C; padding: 14px; display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+          <div style="width: 4px; align-self: stretch; background: #FFA92E;"></div>
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 3px;">
+            <div style="font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 21px; line-height: 1; letter-spacing: 0.02em;">{{ b.title }}</div>
+            <div style="font-size: 12px; color: #93A197; line-height: 1.35;">{{ b.desc }}</div>
+          </div>
+          <div style="font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 26px; color: #FFA92E;">{{ b.pts }}</div>
+        </div>
+      </sc-for>
+
+      <div style="background: #141A16; border: 1px solid #2A342C; padding: 14px; display: flex; align-items: center; gap: 12px;">
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.1em; background: #2A342C; color: #E8EFE9; padding: 4px 7px;">TRASH TALK</div>
+        <div style="font-size: 13px; color: #93A197; line-height: 1.35;">Marion a déjà rendu sa grille. Toi, tu regardes encore les projections.</div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isGrid }}" hint-placeholder-val="{{ true }}">
+    <div style="flex: 1; display: flex; flex-direction: column; padding: 0 0 130px;">
+      <div style="position: sticky; top: 62px; z-index: 4; background: #0B0F0C; padding: 14px 18px 12px; border-bottom: 1px solid #2A342C;">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
+          <div style="font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 26px; letter-spacing: 0.02em;">MA GRILLE</div>
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #93A197;">{{ progressLabel }}</div>
+        </div>
+        <div style="height: 4px; background: #1D2620; display: flex;">
+          <div style="background: #45D07A; transition: width 220ms ease; width: {{ progressPct }};"></div>
+        </div>
+      </div>
+
+      <div style="padding: 14px 18px 0; display: flex; flex-direction: column; gap: 8px;">
+        <sc-for list="{{ matches }}" as="m" hint-placeholder-count="6">
+          <div style="background: #141A16; border: 1px solid #2A342C; padding: 10px 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #6E7D74; letter-spacing: 0.1em;">{{ m.time }}</div>
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #6E7D74;">{{ m.line }}</div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+              <button onClick="{{ m.pickAway }}" style="{{ m.awayStyle }}">
+                <div style="{{ m.awayMonoStyle }}">{{ m.away }}</div>
+                <div style="display: flex; flex-direction: column; align-items: flex-start;">
+                  <div style="font-weight: 700; font-size: 14px;">{{ m.awayName }}</div>
+                  <div style="font-size: 11px; opacity: 0.65;">{{ m.awayRec }}</div>
+                </div>
+              </button>
+              <button onClick="{{ m.pickHome }}" style="{{ m.homeStyle }}">
+                <div style="{{ m.homeMonoStyle }}">{{ m.home }}</div>
+                <div style="display: flex; flex-direction: column; align-items: flex-start;">
+                  <div style="font-weight: 700; font-size: 14px;">{{ m.homeName }}</div>
+                  <div style="font-size: 11px; opacity: 0.65;">{{ m.homeRec }}</div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="padding: 26px 18px 0; display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 26px; letter-spacing: 0.02em;">BONUS</div>
+          <div style="flex: 1; height: 1px; background: #2A342C;"></div>
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #FFA92E;">JUSQU'À +65 PTS</div>
+        </div>
+
+        <div style="background: #141A16; border: 1px solid #2A342C; border-top: 3px solid #FFA92E; padding: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+            <div style="font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 23px; line-height: 1; letter-spacing: 0.02em;">TRUST YOUR WR</div>
+            <div style="font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 24px; color: #FFA92E; line-height: 1;">+15</div>
+          </div>
+          <div style="font-size: 12px; color: #93A197; line-height: 1.4; margin: 6px 0 12px;">Aligne 1 à 3 receveurs. 1 pt par tranche de 10 receiving yards, cap à 15.</div>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px;">
+            <sc-for list="{{ wrPicked }}" as="p" hint-placeholder-count="2">
+              <div style="display: flex; align-items: center; gap: 7px; background: #1D2620; border: 1px solid #45D07A; padding: 6px 9px; font-size: 12px; animation: popIn 240ms ease both;">
+                <span style="width: 20px; height: 20px; background: #45D07A; color: #0B0F0C; font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center;">{{ p.initials }}</span>
+                <span>{{ p.name }}</span>
+                <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #6E7D74;">{{ p.team }}</span>
+                <span onClick="{{ p.remove }}" style="cursor: pointer; color: #6E7D74; font-size: 14px; padding: 0 2px;">×</span>
+              </div>
+            </sc-for>
+          </div>
+          <input value="{{ wrQuery }}" onChange="{{ onWrQuery }}" placeholder="Chercher un receveur…" style="width: 100%; box-sizing: border-box; min-height: 44px; background: #0B0F0C; border: 1px solid #2A342C; color: #E8EFE9; padding: 0 12px; font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; outline: none;" style-focus="border-color: #45D07A;" />
+          <div style="display: flex; flex-direction: column; margin-top: 6px;">
+            <sc-for list="{{ wrResults }}" as="p" hint-placeholder-count="3">
+              <div onClick="{{ p.add }}" style="display: flex; align-items: center; gap: 9px; padding: 9px 10px; cursor: pointer; border-bottom: 1px solid #1D2620; min-height: 44px; box-sizing: border-box;" style-hover="background: #1D2620;">
+                <span style="width: 24px; height: 24px; background: #2A342C; color: #E8EFE9; font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center;">{{ p.initials }}</span>
+                <span style="flex: 1; font-size: 13px;">{{ p.name }}</span>
+                <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #6E7D74;">{{ p.team }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #6E7D74; margin-top: 8px;">{{ wrCount }}</div>
+        </div>
+
+        <div style="background: #141A16; border: 1px solid #2A342C; border-top: 3px solid #E06060; padding: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+            <div style="font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 23px; line-height: 1; letter-spacing: 0.02em;">QUITTE OU DOUBLE</div>
+            <div style="font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 24px; color: #FFA92E; line-height: 1;">±20</div>
+          </div>
+          <div style="font-size: 12px; color: #93A197; line-height: 1.4; margin: 6px 0 10px;">Une seule franchise. Elle gagne : +20. Elle tombe : −20.</div>
+          <div style="display: flex; align-items: center; gap: 8px; background: #24140F; border-left: 3px solid #E06060; padding: 9px 11px; margin-bottom: 12px;">
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: #E06060;">PARI RISQUÉ</div>
+            <div style="font-size: 12px; color: #C7A6A6;">Un seul choix, pas de retour arrière après le lock.</div>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;">
+            <sc-for list="{{ qodTeams }}" as="t" hint-placeholder-count="8">
+              <button onClick="{{ t.select }}" style="{{ t.style }}">{{ t.code }}</button>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="background: #141A16; border: 1px solid #2A342C; border-top: 3px solid #FFA92E; padding: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+            <div style="font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 23px; line-height: 1; letter-spacing: 0.02em;">PUNTOS</div>
+            <div style="font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 24px; color: #FFA92E; line-height: 1;">+12</div>
+          </div>
+          <div style="font-size: 12px; color: #93A197; line-height: 1.4; margin: 6px 0 12px;">Trois questions, une franchise par question. 4 pts chacune.</div>
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <sc-for list="{{ puntos }}" as="q" hint-placeholder-count="3">
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                <div style="display: flex; align-items: baseline; gap: 8px;">
+                  <div style="font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 18px; color: #6E7D74;">{{ q.num }}</div>
+                  <div style="font-size: 13px; line-height: 1.35; flex: 1;">{{ q.label }}</div>
+                </div>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                  <sc-for list="{{ q.options }}" as="o" hint-placeholder-count="4">
+                    <button onClick="{{ o.select }}" style="{{ o.style }}">{{ o.code }}</button>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="background: #141A16; border: 1px solid #2A342C; border-top: 3px solid #FFA92E; padding: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+            <div style="font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 23px; line-height: 1; letter-spacing: 0.02em;">COMBINAISON PARFAITE</div>
+            <div style="font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 24px; color: #FFA92E; line-height: 1;">+18</div>
+          </div>
+          <div style="font-size: 12px; color: #93A197; line-height: 1.4; margin: 6px 0 12px;">Un QB sera-t-il intercepté dans ces matchs ? Les trois dans l'ordre : combo payé plein pot.</div>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <sc-for list="{{ combos }}" as="c" hint-placeholder-count="3">
+              <div style="display: flex; align-items: center; gap: 10px; background: #1D2620; padding: 9px 11px;">
+                <div style="font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 20px; color: #FFA92E; width: 16px;">{{ c.num }}</div>
+                <div style="flex: 1; font-family: 'IBM Plex Mono', monospace; font-size: 13px; letter-spacing: 0.04em;">{{ c.match }}</div>
+                <div style="display: flex; gap: 4px;">
+                  <button onClick="{{ c.yes }}" style="{{ c.yesStyle }}">OUI</button>
+                  <button onClick="{{ c.no }}" style="{{ c.noStyle }}">NON</button>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="background: #141A16; border: 1px solid #2A342C; border-top: 3px solid #FFA92E; padding: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+            <div style="font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 23px; line-height: 1; letter-spacing: 0.02em;">NATIONAL TE DAY</div>
+            <div style="font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 24px; color: #FFA92E; line-height: 1;">+9</div>
+          </div>
+          <div style="font-size: 12px; color: #93A197; line-height: 1.4; margin: 6px 0 12px;">Trois matchs où un tight end ira en end zone. 3 pts par bon match.</div>
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <sc-for list="{{ teDay }}" as="m" hint-placeholder-count="6">
+              <div onClick="{{ m.toggle }}" style="{{ m.style }}">
+                <div style="{{ m.boxStyle }}">{{ m.mark }}</div>
+                <div style="flex: 1; font-family: 'IBM Plex Mono', monospace; font-size: 13px; letter-spacing: 0.04em;">{{ m.label }}</div>
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #6E7D74;">{{ m.time }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #6E7D74; margin-top: 10px;">{{ teCount }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="position: sticky; bottom: 64px; z-index: 6; background: rgba(11,15,12,0.95); backdrop-filter: blur(8px); border-top: 1px solid #2A342C; padding: 12px 18px; display: flex; flex-direction: column; gap: 10px;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #6E7D74; letter-spacing: 0.1em;">LOCK JEUDI 02:15 · {{ progressLabel }}</div>
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #FFA92E;">{{ countdownShort }}</div>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button style="flex: 1; min-height: 48px; background: transparent; border: 1px solid #2A342C; color: #93A197; font-family: 'IBM Plex Sans', sans-serif; font-weight: 600; font-size: 14px; cursor: pointer;" style-hover="border-color: #45D07A; color: #E8EFE9;">Brouillon</button>
+        <button onClick="{{ navResults }}" style="flex: 2; min-height: 48px; background: #45D07A; border: none; color: #0B0F0C; font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 22px; letter-spacing: 0.03em; cursor: pointer;" style-hover="background: #5FE291;">SOUMETTRE MA GRILLE</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isResults }}" hint-placeholder-val="{{ true }}">
+    <div style="flex: 1; display: flex; flex-direction: column; gap: 14px; padding: 18px 18px 110px;">
+      <div style="display: flex; align-items: baseline; justify-content: space-between;">
+        <div style="font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 30px; letter-spacing: 0.02em;">RÉVÉLATION W07</div>
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.1em; background: #FFA92E; color: #0B0F0C; padding: 4px 7px;">PUBLIÉE</div>
+      </div>
+
+      <div style="background: #141A16; border: 1px solid #FFA92E; padding: 14px;">
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: #FFA92E; margin-bottom: 10px;">GAME OF THE WEEK</div>
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+            <div style="font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 28px;">KC</div>
+            <div style="font-size: 12px; color: #45D07A;">7 votes</div>
+          </div>
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+            <div style="height: 10px; background: #1D2620; display: flex;">
+              <div style="width: 58%; background: #45D07A;"></div>
+              <div style="width: 42%; background: #FFA92E;"></div>
+            </div>
+            <div style="text-align: center; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #6E7D74;">27 — 24 FINAL/OT</div>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+            <div style="font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 28px; color: #6E7D74;">BUF</div>
+            <div style="font-size: 12px; color: #FFA92E;">5 votes</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="background: #141A16; border: 1px solid #2A342C; padding: 12px 14px; display: flex; align-items: center; gap: 12px;">
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.1em; background: #45D07A; color: #0B0F0C; padding: 4px 7px;">PERFECT WEEK</div>
+        <div style="font-size: 13px; color: #93A197;">Sofiane a coché les 14. Personne ne lui parle plus.</div>
+      </div>
+
+      <div style="background: #141A16; border: 1px solid #2A342C;">
+        <div style="display: grid; grid-template-columns: 76px repeat(5, 1fr); border-bottom: 1px solid #2A342C;">
+          <div style="padding: 9px 8px; font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #6E7D74;">MATCH</div>
+          <sc-for list="{{ resultPlayers }}" as="p" hint-placeholder-count="5">
+            <div style="padding: 9px 4px; text-align: center; font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #93A197;">{{ p }}</div>
+          </sc-for>
+        </div>
+        <sc-for list="{{ resultRows }}" as="r" hint-placeholder-count="8">
+          <div style="display: grid; grid-template-columns: 76px repeat(5, 1fr); border-bottom: 1px solid #1D2620; align-items: center;">
+            <div style="padding: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.02em; color: #E8EFE9;">{{ r.label }}</div>
+            <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="5">
+              <div style="{{ c.style }}">{{ c.mark }}</div>
+            </sc-for>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 24px; letter-spacing: 0.02em; margin-top: 6px;">DÉTAIL DES BONUS</div>
+      <sc-for list="{{ bonusBreakdown }}" as="b" hint-placeholder-count="4">
+        <div style="background: #141A16; border: 1px solid #2A342C; padding: 12px 14px; margin-bottom: 8px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <div style="width: 22px; height: 22px; background: #2A342C; color: #E8EFE9; font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center;">{{ b.initials }}</div>
+              <div style="font-weight: 600; font-size: 14px;">{{ b.player }}</div>
+            </div>
+            <div style="font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 24px; color: #FFA92E;">{{ b.total }}</div>
+          </div>
+          <sc-for list="{{ b.lines }}" as="l" hint-placeholder-count="3">
+            <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 12px; color: #93A197;">
+              <div>{{ l.label }}</div>
+              <div style="{{ l.style }}">{{ l.value }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isStandings }}" hint-placeholder-val="{{ true }}">
+    <div style="flex: 1; display: flex; flex-direction: column; gap: 14px; padding: 18px 18px 110px;">
+      <div style="font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 30px; letter-spacing: 0.02em;">CLASSEMENT</div>
+      <div style="display: flex; gap: 6px;">
+        <sc-for list="{{ standFilters }}" as="f" hint-placeholder-count="3">
+          <button onClick="{{ f.select }}" style="{{ f.style }}">{{ f.label }}</button>
+        </sc-for>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1.15fr 1fr; gap: 8px; align-items: end; margin-top: 6px;">
+        <div style="background: #141A16; border: 1px solid #2A342C; padding: 12px 8px; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 132px; justify-content: flex-end;">
+          <div style="width: 34px; height: 34px; background: #2A342C;"></div>
+          <div style="font-size: 12px; font-weight: 600;">Marion</div>
+          <div style="font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 26px;">141</div>
+          <div style="font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 20px; color: #6E7D74;">2</div>
+        </div>
+        <div style="background: #141A16; border: 1px solid #FFA92E; padding: 12px 8px; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 168px; justify-content: flex-end;">
+          <div style="width: 44px; height: 44px; background: #45D07A;"></div>
+          <div style="font-size: 13px; font-weight: 700;">Sofiane</div>
+          <div style="font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 36px; color: #FFA92E; line-height: 0.9;">148</div>
+          <div style="font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 24px; color: #FFA92E;">1</div>
+        </div>
+        <div style="background: #141A16; border: 1px solid #2A342C; padding: 12px 8px; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 116px; justify-content: flex-end;">
+          <div style="width: 34px; height: 34px; background: #45D07A;"></div>
+          <div style="font-size: 12px; font-weight: 600;">Kevin</div>
+          <div style="font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 26px;">134</div>
+          <div style="font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 20px; color: #6E7D74;">3</div>
+        </div>
+      </div>
+
+      <div style="background: #141A16; border: 1px solid #2A342C;">
+        <sc-for list="{{ standings }}" as="s" hint-placeholder-count="9">
+          <div style="{{ s.rowStyle }}">
+            <div style="font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 22px; color: #6E7D74; width: 26px;">{{ s.rank }}</div>
+            <div style="width: 28px; height: 28px; background: #2A342C;"></div>
+            <div style="flex: 1; font-size: 14px; font-weight: 600;">{{ s.name }}</div>
+            <div style="{{ s.deltaStyle }}">{{ s.delta }}</div>
+            <div style="font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 22px; width: 46px; text-align: right;">{{ s.pts }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isOnboarding }}" hint-placeholder-val="{{ true }}">
+    <div style="flex: 1; display: flex; flex-direction: column; padding: 56px 24px 32px; gap: 26px;">
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div style="font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 62px; line-height: 0.85; letter-spacing: 0.02em;">NFL<br />BET</div>
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.16em; color: #45D07A;">18 SEMAINES · UNE SEULE VÉRITÉ</div>
+      </div>
+      <div style="height: 1px; background: #2A342C;"></div>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: #6E7D74;">CODE D'INVITATION</div>
+        <div style="display: flex; gap: 6px;">
+          <sc-for list="{{ codeCells }}" as="c" hint-placeholder-count="6">
+            <div style="{{ c.style }}">{{ c.char }}</div>
+          </sc-for>
+        </div>
+        <div style="font-size: 12px; color: #93A197;">Le commissaire te l'a envoyé. Sinon, harcèle-le.</div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: #6E7D74;">PSEUDO</div>
+        <input value="{{ pseudo }}" onChange="{{ onPseudo }}" style="width: 100%; box-sizing: border-box; min-height: 52px; background: #141A16; border: 1px solid #2A342C; color: #E8EFE9; padding: 0 14px; font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 24px; letter-spacing: 0.03em; outline: none;" style-focus="border-color: #45D07A;" />
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: #6E7D74;">AVATAR</div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <sc-for list="{{ avatars }}" as="a" hint-placeholder-count="6">
+            <div onClick="{{ a.select }}" style="{{ a.style }}">{{ a.num }}</div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="flex: 1;"></div>
+      <button onClick="{{ navHome }}" style="width: 100%; min-height: 56px; background: #45D07A; border: none; color: #0B0F0C; font-family: 'Big Shoulders Display', sans-serif; font-weight: 800; font-size: 26px; letter-spacing: 0.03em; cursor: pointer;" style-hover="background: #5FE291;">REJOINDRE LA LIGUE</button>
+      <div style="text-align: center; font-size: 13px; color: #6E7D74;">ou <span style="color: #45D07A; cursor: pointer;">créer ma propre ligue</span></div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ showChrome }}" hint-placeholder-val="{{ true }}">
+    <div style="position: sticky; bottom: 0; z-index: 7; background: rgba(11,15,12,0.96); backdrop-filter: blur(10px); border-top: 1px solid #2A342C; display: grid; grid-template-columns: repeat(4, 1fr);">
+      <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="4">
+        <button onClick="{{ n.go }}" style="{{ n.style }}">
+          <div style="{{ n.dotStyle }}"></div>
+          <div>{{ n.label }}</div>
+        </button>
+      </sc-for>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:844},&quot;screen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dashboard&quot;,&quot;grid&quot;,&quot;results&quot;,&quot;standings&quot;,&quot;onboarding&quot;],&quot;default&quot;:&quot;dashboard&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;onNav&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(s: string) =&gt; void&quot;}}">
+const C = { bg:'#0B0F0C', s1:'#141A16', s2:'#1D2620', line:'#2A342C', tx:'#E8EFE9', mu:'#93A197', dim:'#6E7D74', gr:'#45D07A', am:'#FFA92E', rd:'#E06060' };
+
+const MATCHES = [
+  { id:1, away:'KC', awayName:'Chiefs', awayRec:'5-1', home:'BUF', homeName:'Bills', homeRec:'4-2', time:'JEU 02:15', line:'BUF -1.5' },
+  { id:2, away:'DET', awayName:'Lions', awayRec:'5-1', home:'MIN', homeName:'Vikings', homeRec:'5-1', time:'DIM 19:00', line:'MIN -2.5' },
+  { id:3, away:'SF', awayName:'49ers', awayRec:'3-3', home:'SEA', homeName:'Seahawks', homeRec:'4-2', time:'DIM 19:00', line:'SF -3' },
+  { id:4, away:'DAL', awayName:'Cowboys', awayRec:'3-3', home:'PHI', homeName:'Eagles', homeRec:'4-2', time:'DIM 19:00', line:'PHI -4' },
+  { id:5, away:'GB', awayName:'Packers', awayRec:'4-2', home:'CHI', homeName:'Bears', homeRec:'4-2', time:'DIM 19:00', line:'GB -3.5' },
+  { id:6, away:'BAL', awayName:'Ravens', awayRec:'4-2', home:'CIN', homeName:'Bengals', homeRec:'2-4', time:'DIM 19:00', line:'BAL -6' },
+  { id:7, away:'MIA', awayName:'Dolphins', awayRec:'2-4', home:'NYJ', homeName:'Jets', homeRec:'2-4', time:'DIM 19:00', line:'NYJ -2' },
+  { id:8, away:'HOU', awayName:'Texans', awayRec:'5-1', home:'JAX', homeName:'Jaguars', homeRec:'2-4', time:'DIM 19:00', line:'HOU -5' },
+  { id:9, away:'LAR', awayName:'Rams', awayRec:'2-4', home:'ARI', homeName:'Cardinals', homeRec:'3-3', time:'DIM 22:05', line:'ARI -1' },
+  { id:10, away:'DEN', awayName:'Broncos', awayRec:'3-3', home:'LV', homeName:'Raiders', homeRec:'2-4', time:'DIM 22:05', line:'DEN -3' },
+  { id:11, away:'PIT', awayName:'Steelers', awayRec:'4-2', home:'CLE', homeName:'Browns', homeRec:'1-5', time:'DIM 22:25', line:'PIT -4.5' },
+  { id:12, away:'TB', awayName:'Buccaneers', awayRec:'4-2', home:'NO', homeName:'Saints', homeRec:'2-4', time:'DIM 22:25', line:'TB -3' },
+  { id:13, away:'LAC', awayName:'Chargers', awayRec:'3-3', home:'IND', homeName:'Colts', homeRec:'3-3', time:'LUN 02:20', line:'LAC -2.5' },
+  { id:14, away:'ATL', awayName:'Falcons', awayRec:'4-2', home:'CAR', homeName:'Panthers', homeRec:'1-5', time:'MAR 02:15', line:'ATL -7' }
+];
+
+const WRS = [
+  { name:'Justin Jefferson', team:'MIN' }, { name:'CeeDee Lamb', team:'DAL' }, { name:'Ja\u2019Marr Chase', team:'CIN' },
+  { name:'Tyreek Hill', team:'MIA' }, { name:'A.J. Brown', team:'PHI' }, { name:'Amon-Ra St. Brown', team:'DET' },
+  { name:'Nico Collins', team:'HOU' }, { name:'Puka Nacua', team:'LAR' }, { name:'Garrett Wilson', team:'NYJ' },
+  { name:'DK Metcalf', team:'SEA' }, { name:'Mike Evans', team:'TB' }, { name:'Rashee Rice', team:'KC' }
+];
+
+const PUNTOS = [
+  { num:'01', label:'Quelle équipe cumulera le plus de rushing yards ?', options:['BAL','PHI','DET','SF'] },
+  { num:'02', label:'Qui convertira le plus de 3rd downs ?', options:['KC','BUF','GB','HOU'] },
+  { num:'03', label:'Quelle défense signera le plus de sacks ?', options:['PIT','DAL','CLE','MIN'] }
+];
+
+const STAND = [
+  { rank:4, name:'Thomas', pts:129, delta:'▲ 1', up:true }, { rank:5, name:'Léa', pts:126, delta:'▼ 2', up:false },
+  { rank:6, name:'Antoine', pts:121, delta:'▲ 3', up:true }, { rank:7, name:'Nabil', pts:118, delta:'—', up:null },
+  { rank:8, name:'Camille', pts:112, delta:'▼ 1', up:false }, { rank:9, name:'Hugo', pts:108, delta:'▲ 2', up:true },
+  { rank:10, name:'Bastien', pts:101, delta:'▼ 3', up:false }, { rank:11, name:'Manon', pts:97, delta:'—', up:null },
+  { rank:12, name:'Yanis', pts:88, delta:'▼ 1', up:false }
+];
+
+const initials = (n) => n.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+
+class Component extends DCLogic {
+  state = {
+    picks: { 1:'away', 2:'home', 3:'away', 5:'away', 6:'away', 8:'away', 11:'away', 12:'away', 14:'away' },
+    wr: [WRS[0], WRS[1]], wrQuery: '', qod: 'PHI', puntos: { '01':'BAL', '02':null, '03':null },
+    combos: { 1:'yes', 2:null, 3:null }, teDay: [1, 4], filter: 'Général', avatar: 2,
+    pseudo: 'KEVIN', left: 8079
+  };
+
+  componentDidMount() {
+    this.t = setInterval(() => this.setState(s => ({ left: Math.max(0, s.left - 1) })), 1000);
+  }
+  componentWillUnmount() { clearInterval(this.t); }
+
+  pad(n) { return String(n).padStart(2, '0'); }
+
+  fmt(secs) {
+    const h = Math.floor(secs / 3600), m = Math.floor((secs % 3600) / 60), s = secs % 60;
+    return this.pad(h) + ':' + this.pad(m) + ':' + this.pad(s);
+  }
+
+  teamBtn(active, danger) {
+    const base = 'min-height:44px;border:1px solid ' + (active ? (danger ? C.rd : C.gr) : C.line) + ';background:' + (active ? (danger ? C.rd : C.gr) : C.s2) + ';color:' + (active ? C.bg : C.mu) + ";font-family:'Big Shoulders Display',sans-serif;font-weight:800;font-size:18px;letter-spacing:0.04em;cursor:pointer;transition:all 140ms ease;padding:0 10px;";
+    return base;
+  }
+
+  renderVals() {
+    const st = this.state, p = this.props;
+    const screen = p.screen || 'dashboard';
+    const nav = (s) => () => { if (p.onNav) p.onNav(s); };
+    const done = Object.keys(st.picks).length;
+
+    const matches = MATCHES.map(m => {
+      const sel = st.picks[m.id];
+      const btn = (side) => {
+        const on = sel === side;
+        return 'display:flex;align-items:center;gap:9px;min-height:52px;padding:8px 10px;cursor:pointer;text-align:left;transition:all 140ms ease;border:1px solid ' + (on ? C.gr : C.line) + ';background:' + (on ? C.gr : C.s2) + ';color:' + (on ? C.bg : C.tx) + ";font-family:'IBM Plex Sans',sans-serif;";
+      };
+      const mono = (side) => {
+        const on = sel === side;
+        return 'width:32px;height:32px;flex:none;display:flex;align-items:center;justify-content:center;background:' + (on ? C.bg : C.line) + ';color:' + (on ? C.gr : C.mu) + ";font-family:'Big Shoulders Display',sans-serif;font-weight:800;font-size:15px;";
+      };
+      return Object.assign({}, m, {
+        awayStyle: btn('away'), homeStyle: btn('home'),
+        awayMonoStyle: mono('away'), homeMonoStyle: mono('home'),
+        pickAway: () => this.setState(s => ({ picks: Object.assign({}, s.picks, { [m.id]: 'away' }) })),
+        pickHome: () => this.setState(s => ({ picks: Object.assign({}, s.picks, { [m.id]: 'home' }) }))
+      });
+    });
+
+    const q = st.wrQuery.trim().toLowerCase();
+    const wrResults = (q ? WRS.filter(w => w.name.toLowerCase().includes(q) && !st.wr.find(x => x.name === w.name)) : []).slice(0, 4).map(w => ({
+      name: w.name, team: w.team, initials: initials(w.name),
+      add: () => this.setState(s => ({ wr: s.wr.length >= 3 ? s.wr : s.wr.concat([w]), wrQuery: '' }))
+    }));
+
+    const teams = ['KC','BUF','DET','MIN','SF','SEA','DAL','PHI','GB','CHI','BAL','HOU'];
+
+    const teLabels = MATCHES.slice(0, 7);
+
+    const resultPlayers = ['SOF','MAR','KEV','THO','LÉA'];
+    const grid = [
+      [1,1,1,1,0],[1,0,1,1,1],[1,1,0,0,1],[1,1,1,0,1],[1,0,0,1,1],[1,1,1,1,0],[1,1,0,1,1],[1,0,1,1,0]
+    ];
+    const cellStyle = (ok) => 'padding:8px 4px;text-align:center;font-size:13px;color:' + (ok ? C.gr : C.rd) + ';background:' + (ok ? 'rgba(69,208,122,0.07)' : 'transparent') + ';';
+
+    return {
+      showChrome: screen !== 'onboarding',
+      isDash: screen === 'dashboard', isGrid: screen === 'grid', isResults: screen === 'results',
+      isStandings: screen === 'standings', isOnboarding: screen === 'onboarding',
+      navHome: nav('dashboard'), navGrid: nav('grid'), navResults: nav('results'), navStandings: nav('standings'),
+      countdown: this.fmt(st.left), countdownShort: this.fmt(st.left),
+
+      bonusPreview: [
+        { title: 'TRUST YOUR WR', desc: '1 à 3 receveurs, points aux yards', pts: '+15' },
+        { title: 'QUITTE OU DOUBLE', desc: 'Une franchise. Tout ou rien.', pts: '±20' },
+        { title: 'COMBINAISON PARFAITE', desc: '3 matchs, QB intercepté OUI/NON', pts: '+18' }
+      ],
+
+      progressLabel: done + '/14 MATCHS',
+      progressPct: Math.round(done / 14 * 100) + '%',
+      matches,
+
+      wrPicked: st.wr.map(w => ({
+        name: w.name, team: w.team, initials: initials(w.name),
+        remove: () => this.setState(s => ({ wr: s.wr.filter(x => x.name !== w.name) }))
+      })),
+      wrQuery: st.wrQuery,
+      onWrQuery: (e) => this.setState({ wrQuery: e.target.value }),
+      wrResults,
+      wrCount: st.wr.length + '/3 RECEVEURS · TAPE POUR CHERCHER',
+
+      qodTeams: teams.map(t => ({ code: t, style: this.teamBtn(st.qod === t, true), select: () => this.setState({ qod: t }) })),
+
+      puntos: PUNTOS.map(qq => ({
+        num: qq.num, label: qq.label,
+        options: qq.options.map(o => ({
+          code: o, style: this.teamBtn(st.puntos[qq.num] === o, false),
+          select: () => this.setState(s => ({ puntos: Object.assign({}, s.puntos, { [qq.num]: o }) }))
+        }))
+      })),
+
+      combos: [1,2,3].map(i => {
+        const m = MATCHES[i - 1], v = st.combos[i];
+        const tog = (val) => 'min-width:52px;min-height:40px;border:1px solid ' + (v === val ? C.gr : C.line) + ';background:' + (v === val ? C.gr : C.bg) + ';color:' + (v === val ? C.bg : C.mu) + ";font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.08em;cursor:pointer;transition:all 140ms ease;";
+        return {
+          num: i, match: m.away + ' @ ' + m.home, yesStyle: tog('yes'), noStyle: tog('no'),
+          yes: () => this.setState(s => ({ combos: Object.assign({}, s.combos, { [i]: 'yes' }) })),
+          no: () => this.setState(s => ({ combos: Object.assign({}, s.combos, { [i]: 'no' }) }))
+        };
+      }),
+
+      teDay: teLabels.map(m => {
+        const on = st.teDay.includes(m.id);
+        const full = st.teDay.length >= 3 && !on;
+        return {
+          label: m.away + ' @ ' + m.home, time: m.time,
+          mark: on ? '✓' : '', style: 'display:flex;align-items:center;gap:10px;min-height:46px;padding:8px 11px;cursor:' + (full ? 'not-allowed' : 'pointer') + ';background:' + (on ? 'rgba(69,208,122,0.10)' : C.s2) + ';border:1px solid ' + (on ? C.gr : 'transparent') + ';opacity:' + (full ? '0.4' : '1') + ';transition:all 140ms ease;',
+          boxStyle: 'width:22px;height:22px;flex:none;display:flex;align-items:center;justify-content:center;font-size:12px;background:' + (on ? C.gr : 'transparent') + ';color:' + C.bg + ';border:1px solid ' + (on ? C.gr : C.line) + ';',
+          toggle: () => this.setState(s => {
+            if (s.teDay.includes(m.id)) return { teDay: s.teDay.filter(x => x !== m.id) };
+            if (s.teDay.length >= 3) return {};
+            return { teDay: s.teDay.concat([m.id]) };
+          })
+        };
+      }),
+      teCount: st.teDay.length + '/3 MATCHS SÉLECTIONNÉS',
+
+      resultPlayers,
+      resultRows: grid.map((row, i) => ({
+        label: MATCHES[i].away + '@' + MATCHES[i].home,
+        cells: row.map(v => ({ mark: v ? '✓' : '✗', style: cellStyle(v) }))
+      })),
+      bonusBreakdown: [
+        { player: 'Sofiane', initials: 'SO', total: '+38', lines: [
+          { label: 'Trust Your WR · 214 yds', value: '+15', style: 'color:' + C.gr },
+          { label: 'Quitte ou Double · PHI ✓', value: '+20', style: 'color:' + C.gr },
+          { label: 'Puntos · 1/3', value: '+4', style: 'color:' + C.mu }
+        ]},
+        { player: 'Kevin', initials: 'KV', total: '+9', lines: [
+          { label: 'Trust Your WR · 96 yds', value: '+9', style: 'color:' + C.gr },
+          { label: 'Quitte ou Double · DAL ✗', value: '−20', style: 'color:' + C.rd },
+          { label: 'National TE Day · 3/3', value: '+9', style: 'color:' + C.gr }
+        ]}
+      ],
+
+      standFilters: ['Général','Cette semaine','W01–W07'].map(f => ({
+        label: f, select: () => this.setState({ filter: f }),
+        style: 'min-height:38px;padding:0 14px;border:1px solid ' + (st.filter === f ? C.gr : C.line) + ';background:' + (st.filter === f ? C.gr : 'transparent') + ';color:' + (st.filter === f ? C.bg : C.mu) + ";font-family:'IBM Plex Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all 140ms ease;"
+      })),
+      standings: STAND.map((s, i) => ({
+        rank: s.rank, name: s.name, pts: s.pts, delta: s.delta,
+        rowStyle: 'display:flex;align-items:center;gap:10px;padding:11px 13px;' + (i < STAND.length - 1 ? 'border-bottom:1px solid #1D2620;' : '') + (s.name === 'Thomas' ? '' : ''),
+        deltaStyle: 'font-size:11px;width:30px;text-align:right;color:' + (s.up === true ? C.gr : s.up === false ? C.rd : C.dim) + ';'
+      })),
+
+      codeCells: 'GRID18'.split('').map((ch, i) => ({
+        char: ch,
+        style: "width:48px;height:56px;display:flex;align-items:center;justify-content:center;background:#141A16;border:1px solid " + (i < 6 ? C.gr : C.line) + ";font-family:'Big Shoulders Display',sans-serif;font-weight:800;font-size:26px;color:" + C.tx + ';'
+      })),
+      pseudo: st.pseudo,
+      onPseudo: (e) => this.setState({ pseudo: e.target.value }),
+      avatars: [1,2,3,4,5,6].map(n => ({
+        num: n, select: () => this.setState({ avatar: n }),
+        style: 'width:52px;height:52px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:' + (st.avatar === n ? C.gr : C.s1) + ';border:1px solid ' + (st.avatar === n ? C.gr : C.line) + ';color:' + (st.avatar === n ? C.bg : C.dim) + ";font-family:'Big Shoulders Display',sans-serif;font-weight:800;font-size:22px;transition:all 140ms ease;"
+      })),
+
+      navItems: [
+        { key:'dashboard', label:'Accueil' }, { key:'grid', label:'Grille' },
+        { key:'results', label:'Résultats' }, { key:'standings', label:'Classement' }
+      ].map(n => ({
+        label: n.label, go: nav(n.key),
+        style: 'min-height:64px;background:transparent;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:0;color:' + (screen === n.key ? C.tx : C.dim) + ";font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.06em;",
+        dotStyle: 'width:22px;height:3px;background:' + (screen === n.key ? C.gr : C.line) + ';transition:background 160ms ease;'
+      }))
+    };
+  }
+}
+</script>
+</body>
+</html>
