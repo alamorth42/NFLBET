@@ -10,6 +10,7 @@ import { fetchNflWeek, fetchNflResults } from "./schedule";
 import { computeStatTodo } from "../scoring/statTodo";
 import { scoreWeek } from "../scoring/scoreWeek";
 import { lockWeek } from "../scoring/lockWeek";
+import { autoDrawRuntime, drawSeed } from "../scoring/draw";
 import { collectEntryRefs } from "../lib/refs";
 
 export const app = express();
@@ -113,6 +114,18 @@ app.get(
       .map((d) => ({ lid: d.ref.path.split("/")[1], role: d.data().role as string }));
 
     const leagues = rows.length ? await db.getAll(...rows.map((r) => db.doc(`leagues/${r.lid}`))) : [];
+
+    // Réparation : un propriétaire dont le document membre a été écrasé (par une
+    // invitation rejouée, avant le correctif) retrouve son rôle ici, sans avoir
+    // à demander quoi que ce soit — c'est l'écran par lequel tout le monde passe.
+    const demoted = rows.filter((r, i) => leagues[i]?.data()?.ownerUid === uid && r.role !== "OWNER");
+    if (demoted.length) {
+      await Promise.all(
+        demoted.map((r) => db.doc(`leagues/${r.lid}/members/${uid}`).set({ role: "OWNER" }, { merge: true }))
+      );
+      for (const r of demoted) r.role = "OWNER";
+    }
+
     const data = rows
       .map((r, i) => ({
         id: r.lid,
@@ -180,6 +193,22 @@ app.post(
   })
 );
 
+/**
+ * Rattache `uid` à la ligue s'il n'en est pas déjà membre.
+ *
+ * Rejouer une invitation ne doit RIEN changer : le commissaire qui ouvre son
+ * propre lien (pour le tester, ou parce que le code était encore mémorisé dans
+ * son navigateur) se retrouvait rétrogradé en PLAYER, admin compris.
+ */
+async function ensureMember(lid: string, uid: string, displayName?: string, ownerUid?: string) {
+  const ref = db.doc(`leagues/${lid}/members/${uid}`);
+  const snap = await ref.get();
+  if (snap.exists && snap.data()?.status !== "REMOVED") return { role: snap.data()?.role as string, joined: false };
+  const role = ownerUid === uid ? "OWNER" : "PLAYER";
+  await ref.set({ uid, displayName: displayName || "Joueur", role, status: "ACTIVE", joinedAt: now() }, { merge: true });
+  return { role, joined: true };
+}
+
 /** Rejoindre une ligue via son code d'invitation (flux public d'onboarding). */
 app.post(
   "/invites/:code/accept",
@@ -192,11 +221,8 @@ app.post(
     const lid = idx.data()!.leagueId as string;
     const league = await db.doc(`leagues/${lid}`).get();
     if (!league.exists) throw notFound("Ligue introuvable");
-    await db.doc(`leagues/${lid}/members/${uid}`).set(
-      { uid, displayName: displayName || "Joueur", role: "PLAYER", status: "ACTIVE", joinedAt: now() },
-      { merge: true }
-    );
-    res.json({ data: { leagueId: lid, name: league.data()?.name } });
+    const r = await ensureMember(lid, uid, displayName, league.data()?.ownerUid);
+    res.json({ data: { leagueId: lid, name: league.data()?.name, role: r.role, alreadyMember: !r.joined } });
   })
 );
 
@@ -212,18 +238,17 @@ app.post(
   })
 );
 
-/** Rejoindre une ligue (crée le membre PLAYER). */
+/** Rejoindre une ligue par son id (crée le membre PLAYER s'il n'existe pas). */
 app.post(
   "/leagues/:lid/join",
   wrap(async (req, res) => {
     const { lid } = req.params;
     const uid = req.uid!;
     const { displayName } = req.body || {};
-    await db.doc(`leagues/${lid}/members/${uid}`).set(
-      { uid, displayName: displayName || "Joueur", role: "PLAYER", status: "ACTIVE", joinedAt: now() },
-      { merge: true }
-    );
-    res.json({ data: { joined: true } });
+    const league = await db.doc(`leagues/${lid}`).get();
+    if (!league.exists) throw notFound("Ligue introuvable");
+    const r = await ensureMember(lid, uid, displayName, league.data()?.ownerUid);
+    res.json({ data: { joined: true, role: r.role, alreadyMember: !r.joined } });
   })
 );
 
@@ -458,6 +483,103 @@ app.post(
       { merge: true }
     );
     res.json({ data: { bonusId: ref.id } });
+  })
+);
+
+/**
+ * Joueurs concernés par une semaine : participants déclarés de la saison, plus
+ * ceux qui ont rendu une grille (un membre ajouté en cours de route ne doit pas
+ * être oublié du tirage).
+ */
+async function weekRoster(base: string, week: number) {
+  const [seasonSnap, entriesSnap] = await Promise.all([
+    db.doc(base).get(),
+    db.collection(`${base}/entries`).where("week", "==", week).get(),
+  ]);
+  const participants: string[] = seasonSnap.data()?.participants || [];
+  const entries = entriesSnap.docs.map((d) => d.data() as any);
+  return {
+    uids: Array.from(new Set([...participants, ...entries.map((e) => e.uid as string)])),
+    entries,
+  };
+}
+
+/** Admin : (re)tirer au sort les poules (Cage Fight) ou les duos (Destins Liés). */
+app.post(
+  "/leagues/:lid/seasons/:sid/bonuses/:bid/draw",
+  wrap(async (req, res) => {
+    const { lid, sid, bid } = req.params;
+    await requireAdmin(lid, req.uid!);
+    const base = seasonPath(lid, sid);
+    const ref = db.doc(`${base}/bonuses/${bid}`);
+    const snap = await ref.get();
+    if (!snap.exists) throw notFound("Bonus introuvable");
+    const bonus: any = snap.data();
+
+    const { uids, entries } = await weekRoster(base, bonus.week);
+    if (uids.length === 0)
+      throw badRequest("NO_PARTICIPANTS", "Aucun participant à répartir : ajoute-les à la saison (section 0).");
+    const answers: Record<string, any> = {};
+    for (const e of entries) answers[e.uid] = (e.bonusAnswers || {})[bid] || {};
+
+    const patch = autoDrawRuntime(
+      { id: bid, type: bonus.type, config: bonus.config, runtime: bonus.runtime },
+      { uids, answers, seed: drawSeed(lid, sid, bonus.week, bid, String(req.body?.nonce ?? Date.now())), force: true }
+    );
+    if (!patch) throw badRequest("NO_DRAW_FOR_TYPE", `Le bonus « ${bonus.title || bonus.type} » ne se tire pas au sort.`);
+
+    await ref.set({ runtime: { ...(bonus.runtime || {}), ...patch, drawnAt: now() } }, { merge: true });
+    res.json({ data: patch });
+  })
+);
+
+/**
+ * Admin : composition manuelle des poules / duos (retouche après tirage).
+ * Refuse un uid inconnu ou placé deux fois — le moteur compterait ses points
+ * dans deux poules à la fois.
+ */
+app.put(
+  "/leagues/:lid/seasons/:sid/bonuses/:bid/runtime",
+  wrap(async (req, res) => {
+    const { lid, sid, bid } = req.params;
+    await requireAdmin(lid, req.uid!);
+    const base = seasonPath(lid, sid);
+    const ref = db.doc(`${base}/bonuses/${bid}`);
+    const snap = await ref.get();
+    if (!snap.exists) throw notFound("Bonus introuvable");
+    const bonus: any = snap.data();
+    const { uids } = await weekRoster(base, bonus.week);
+    const known = new Set(uids);
+
+    const seen = new Set<string>();
+    const check = (uid: string, where: string) => {
+      if (!known.has(uid)) throw badRequest("UNKNOWN_UID", `${uid} n'est pas un participant de la saison (${where})`);
+      if (seen.has(uid)) throw badRequest("DUPLICATE_UID", `${uid} apparaît deux fois (${where})`);
+      seen.add(uid);
+    };
+
+    const patch: Record<string, unknown> = { drawSource: "MANUAL", drawnAt: now() };
+    if (req.body?.pools !== undefined) {
+      const pools = req.body.pools || {};
+      for (const [name, list] of Object.entries<any>(pools)) {
+        if (!Array.isArray(list)) throw badRequest("INVALID_POOLS", `Poule ${name} : liste attendue`);
+        list.forEach((uid: string) => check(uid, `poule ${name}`));
+      }
+      patch.pools = pools;
+    }
+    if (req.body?.duos !== undefined) {
+      const duos = req.body.duos || [];
+      if (!Array.isArray(duos)) throw badRequest("INVALID_DUOS", "Liste de duos attendue");
+      for (const d of duos) {
+        if (!Array.isArray(d) || d.length !== 2) throw badRequest("INVALID_DUOS", "Chaque duo doit compter deux joueurs");
+        d.forEach((uid: string) => check(uid, "duos"));
+      }
+      patch.duos = duos;
+      patch.unpaired = uids.filter((u) => !seen.has(u));
+    }
+
+    await ref.set({ runtime: { ...(bonus.runtime || {}), ...patch } }, { merge: true });
+    res.json({ data: patch });
   })
 );
 

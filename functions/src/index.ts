@@ -58,7 +58,7 @@ export const lockDueWeeks = onSchedule(
       }
       try {
         const r = await lockWeek(lid, sid, week);
-        logger.info("Semaine verrouillée automatiquement", { lid, sid, week, late: r.late });
+        logger.info("Semaine verrouillée automatiquement", { lid, sid, week, late: r.late, drawn: r.drawn });
       } catch (e: any) {
         // Une ligue en erreur ne doit pas empêcher les autres d'être verrouillées.
         logger.error("Échec du verrouillage automatique", { lid, sid, week, error: e?.message });

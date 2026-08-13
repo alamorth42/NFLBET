@@ -1,6 +1,6 @@
 "use client";
 import { useLeagueCtx } from "../LeagueShell";
-import { useWeekBonuses } from "@/hooks/firestore";
+import { useMatches, useWeekBonuses } from "@/hooks/firestore";
 import { useEngineCatalog } from "@/hooks/engines";
 import { Card, C } from "@/components/ui";
 import { fmtDateTime } from "@/lib/format";
@@ -14,7 +14,10 @@ export default function RulesPage() {
   const { lid, sid, currentWeek, league, season, tz } = useLeagueCtx();
   const n = currentWeek?.number ?? 1;
   const { bonuses } = useWeekBonuses(lid, sid, n);
+  const { matches } = useMatches(lid, sid, n);
   const { byType } = useEngineCatalog();
+  const matchById: Record<string, (typeof matches)[number]> = {};
+  matches.forEach((m) => (matchById[m.id] = m));
 
   const r = league?.rules || {};
   const base = [
@@ -83,6 +86,10 @@ export default function RulesPage() {
                 .filter((f) => f.label && b.config?.[f.key] !== undefined && b.config?.[f.key] !== "")
                 .map((f) => {
                   const v = b.config[f.key];
+                  const count = (n: number, one: string, many = `${one}s`) => `${n} ${n > 1 ? many : one}`;
+                  // Les champs composés (matchs du combiné, questions, points par
+                  // place) sont résumés : un JSON brut avec des identifiants de
+                  // documents n'apprend rien à un joueur.
                   const shown =
                     f.type === "boolean"
                       ? v
@@ -90,6 +97,16 @@ export default function RulesPage() {
                         : "non"
                       : f.type === "enum"
                       ? f.optionLabels?.[v] || String(v)
+                      : f.type === "matches"
+                      ? count((v || []).length, "match", "matchs")
+                      : f.type === "comboItems"
+                      ? `${count((v || []).length, "match", "matchs")}, dans l'ordre`
+                      : f.type === "questions"
+                      ? count((v || []).length, "question")
+                      : f.type === "numbers"
+                      ? (f.fields || []).map((sf) => `${sf.label} ${v?.[sf.key] ?? 0}`).join(" · ")
+                      : f.type === "match"
+                      ? matchById[v] ? `${matchById[v].awayTeamId} @ ${matchById[v].homeTeamId}` : "désigné"
                       : typeof v === "object"
                       ? JSON.stringify(v)
                       : String(v);

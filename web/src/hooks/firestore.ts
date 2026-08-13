@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   collection,
   doc,
@@ -81,10 +81,36 @@ export function useWeek(lid: string, sid: string, n: number) {
   return { week: data, loading };
 }
 
+/**
+ * Ordre d'affichage des matchs : chronologique, le prochain coup d'envoi en
+ * haut. Firestore renvoie les documents dans l'ordre de leur identifiant, ce
+ * qui donne une grille mélangée ; on trie ici plutôt qu'avec un `orderBy`, pour
+ * ne pas imposer un index composite et pour placer les matchs sans horaire à la
+ * fin au lieu de les perdre.
+ */
+export const byKickoff = (a: Match, b: Match) =>
+  (a.kickoffAt?.toMillis?.() ?? Infinity) - (b.kickoffAt?.toMillis?.() ?? Infinity);
+
 export function useMatches(lid: string, sid: string, n: number) {
   const { data, loading } = useCollection<Match>(
     () => query(collection(db, `${base(lid, sid)}/matches`), where("week", "==", n)),
     `matches:${lid}:${sid}:${n}`
+  );
+  // Trié ici, une fois : la grille, les résultats, la console admin et les
+  // widgets de bonus lisent tous ce hook.
+  const matches = useMemo(() => [...data].sort(byKickoff), [data]);
+  return { matches, loading };
+}
+
+/**
+ * Tous les matchs de la saison — sert à calculer les bilans V-D des équipes.
+ * Une saison plafonne à ~280 documents : un seul abonnement coûte moins qu'une
+ * requête par semaine, et Firestore les sert depuis le cache local ensuite.
+ */
+export function useSeasonMatches(lid: string, sid: string) {
+  const { data, loading } = useCollection<Match>(
+    () => query(collection(db, `${base(lid, sid)}/matches`)),
+    `allmatches:${lid}:${sid}`
   );
   return { matches: data, loading };
 }

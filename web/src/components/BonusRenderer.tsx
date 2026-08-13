@@ -17,6 +17,8 @@ export function BonusRenderer({
   players,
   teamCodes,
   playerInput,
+  uid,
+  nameByUid,
 }: {
   bonus: Bonus;
   value: any;
@@ -26,7 +28,11 @@ export function BonusRenderer({
   teamCodes: string[];
   /** Flag du catalogue : false = bonus automatique. undefined = catalogue pas encore chargé. */
   playerInput?: boolean;
+  /** Joueur courant + noms de la ligue : pour afficher SA poule / SON duo. */
+  uid?: string;
+  nameByUid?: Record<string, string>;
 }) {
+  const who = (u: string) => nameByUid?.[u] || u.slice(0, 6);
   const weekTeamCodes = Array.from(new Set(matches.flatMap((m) => [m.homeTeamId, m.awayTeamId])));
 
   const body = () => {
@@ -203,14 +209,57 @@ export function BonusRenderer({
         );
       }
 
-      /* ---- Duo (Destins Liés) ---- */
-      case "DUO_COMPETITION":
+      /* ---- Poules (Cage Fight) ---- */
+      case "POOL_COMPETITION": {
+        const pools = bonus.runtime?.pools;
+        if (!pools || Object.keys(pools).length === 0)
+          return (
+            <div className="text-xs text-dim">
+              Poules tirées au sort au verrouillage de la semaine — rien à remplir.
+            </div>
+          );
+        const mine = uid ? Object.entries(pools).find(([, list]) => list.includes(uid)) : undefined;
         return (
-          <button onClick={() => onChange({ participate: !value?.participate })} className="min-h-[44px] px-4 font-display font-extrabold text-[18px] cursor-pointer"
-            style={{ border: `1px solid ${value?.participate ? C.gr : C.line}`, background: value?.participate ? C.gr : C.s2, color: value?.participate ? C.bg : C.mu }}>
-            {value?.participate ? "JE PARTICIPE ✓" : "PARTICIPER LA SEMAINE PROCHAINE"}
-          </button>
+          <div className="flex flex-col gap-2">
+            {Object.entries(pools).map(([name, list]) => {
+              const isMine = mine?.[0] === name;
+              return (
+                <div key={name} className="p-[10px]" style={{ background: C.s2, border: `1px solid ${isMine ? C.gr : "transparent"}` }}>
+                  <div className="font-mono text-[10px] tracking-[0.12em] mb-1" style={{ color: isMine ? C.gr : C.dim }}>
+                    POULE {name}{isMine ? " — LA TIENNE" : ""}
+                  </div>
+                  <div className="text-[13px]">{list.map(who).join(" · ")}</div>
+                </div>
+              );
+            })}
+            <div className="text-dim text-[10px]">Meilleur score de la poule sur la semaine = points.</div>
+          </div>
         );
+      }
+
+      /* ---- Duo (Destins Liés) ---- */
+      case "DUO_COMPETITION": {
+        const duos = bonus.runtime?.duos || [];
+        const mine = uid ? duos.find((d) => d.includes(uid)) : undefined;
+        const partner = mine && uid ? mine.find((u) => u !== uid) : undefined;
+        return (
+          <div className="flex flex-col gap-2">
+            {partner && (
+              <div className="p-[10px]" style={{ background: C.s2, borderLeft: `3px solid ${C.gr}` }}>
+                <div className="font-mono text-[10px] tracking-[0.12em] text-dim">TON DUO</div>
+                <div className="font-display font-extrabold text-[20px]">{who(partner)}</div>
+              </div>
+            )}
+            <button onClick={() => onChange({ participate: !value?.participate })} className="min-h-[44px] px-4 font-display font-extrabold text-[18px] cursor-pointer self-start"
+              style={{ border: `1px solid ${value?.participate ? C.gr : C.line}`, background: value?.participate ? C.gr : C.s2, color: value?.participate ? C.bg : C.mu }}>
+              {value?.participate ? "JE PARTICIPE ✓" : "PARTICIPER"}
+            </button>
+            {duos.length === 0 && (
+              <div className="text-dim text-[10px]">Les duos sont tirés au sort au verrouillage, parmi les inscrits.</div>
+            )}
+          </div>
+        );
+      }
 
       default:
         // Le catalogue fait foi : playerInput === false ⇒ rien à saisir, le

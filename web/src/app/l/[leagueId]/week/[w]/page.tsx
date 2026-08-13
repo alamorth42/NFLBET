@@ -2,23 +2,25 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLeagueCtx } from "../../LeagueShell";
-import { useMatches, useWeekBonuses, useMyEntry, useTeams, usePlayers } from "@/hooks/firestore";
+import { useMatches, useSeasonMatches, useWeekBonuses, useMyEntry, useTeams, usePlayers } from "@/hooks/firestore";
 import { useEngineCatalog } from "@/hooks/engines";
 import { BonusRenderer } from "@/components/BonusRenderer";
 import { WeekSwitcher } from "@/components/WeekSwitcher";
 import { C } from "@/components/ui";
 import { api, ApiError } from "@/lib/api";
 import { fmtKickoff } from "@/lib/format";
+import { fmtRecord, teamRecords } from "@/lib/records";
 import { validateEntry } from "@/lib/validateEntry";
 
 /** Clé du brouillon local — par ligue / saison / semaine / joueur. */
 const draftKey = (lid: string, sid: string, n: number, uid: string) => `nflbet.draft.${lid}.${sid}.${n}.${uid}`;
 
 export default function GridPage({ params }: { params: { w: string } }) {
-  const { lid, sid, uid, currentWeek, season, tz } = useLeagueCtx();
+  const { lid, sid, uid, currentWeek, season, tz, nameByUid } = useLeagueCtx();
   const router = useRouter();
   const n = parseInt(params.w, 10);
   const { matches } = useMatches(lid, sid, n);
+  const { matches: allMatches } = useSeasonMatches(lid, sid);
   const { bonuses } = useWeekBonuses(lid, sid, n);
   const { entry } = useMyEntry(lid, sid, n, uid);
   const { teamById } = useTeams();
@@ -68,6 +70,9 @@ export default function GridPage({ params }: { params: { w: string } }) {
   }, [picks, answers, hydrated, key]);
 
   const teamCodes = useMemo(() => Object.keys(teamById), [teamById]);
+  // Bilan V-D à l'entrée de la semaine : recalculé depuis les résultats saisis,
+  // jamais tenu à jour à la main.
+  const records = useMemo(() => teamRecords(allMatches, n), [allMatches, n]);
   const done = Object.keys(picks).length;
   const locked = currentWeek && currentWeek.state !== "OPEN";
 
@@ -163,7 +168,10 @@ export default function GridPage({ params }: { params: { w: string } }) {
                     <span className="w-8 h-8 grid place-items-center font-display font-extrabold text-[15px]" style={{ background: on ? C.bg : C.line, color: on ? C.gr : C.mu }}>
                       {code}
                     </span>
-                    <span className="text-sm font-bold">{teamById[code]?.name?.split(" ").slice(-1)[0] || code}</span>
+                    <span className="text-sm font-bold min-w-0 truncate">{teamById[code]?.name?.split(" ").slice(-1)[0] || code}</span>
+                    <span className="ml-auto font-mono text-[10px]" style={{ color: on ? C.bg : C.dim }}>
+                      {fmtRecord(records[code])}
+                    </span>
                   </button>
                 );
               })}
@@ -190,6 +198,8 @@ export default function GridPage({ params }: { params: { w: string } }) {
               players={players}
               teamCodes={teamCodes}
               playerInput={engineByType[b.type]?.playerInput}
+              uid={uid}
+              nameByUid={nameByUid}
             />
           ))}
         </div>

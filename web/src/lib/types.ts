@@ -63,6 +63,16 @@ export interface Match {
   result?: MatchResult;
 }
 
+/** Composition figée d'un bonus : poules (Cage Fight) / duos (Destins Liés). */
+export interface BonusRuntime {
+  pools?: Record<string, string[]>;
+  duos?: string[][];
+  /** Joueurs laissés de côté par un tirage impair ou une non-inscription. */
+  unpaired?: string[];
+  drawSource?: "AUTO" | "REDRAW" | "MANUAL";
+  drawnAt?: { toMillis(): number } | null;
+}
+
 export interface Bonus {
   id: string;
   week: number;
@@ -70,16 +80,27 @@ export interface Bonus {
   title: string;
   optional?: boolean;
   config: any;
+  runtime?: BonusRuntime;
 }
 
 /** Métadonnées d'un moteur de bonus, renvoyées par GET /config/engines. */
 export interface EngineField {
   /** Nom réel dans `config` — technique, jamais affiché tel quel. */
   key: string;
-  /** `match` = choix d'un match de la semaine courante (vide = automatique). */
-  type: "number" | "boolean" | "enum" | "json" | "match";
+  /**
+   * Éditeur à afficher :
+   *  - `match` : un match de la semaine (vide = automatique) ;
+   *  - `matches` : plusieurs matchs cochés (combiné) ;
+   *  - `comboItems` : lignes « match + QB domicile + QB extérieur » ordonnées ;
+   *  - `questions` : lignes « statistique + extrême + points » ;
+   *  - `numbers` : plusieurs nombres nommés (voir `fields`) ;
+   *  - `json` : repli brut, ne devrait plus servir.
+   */
+  type: "number" | "boolean" | "enum" | "json" | "match" | "matches" | "comboItems" | "questions" | "numbers";
   default?: any;
   options?: string[];
+  /** Sous-champs d'un `numbers` : clé technique -> intitulé. */
+  fields?: { key: string; label: string }[];
   /** Intitulé lisible ; à défaut on retombe sur `key`. */
   label?: string;
   /** Traduction des valeurs d'un `enum` (valeur technique -> texte affiché). */

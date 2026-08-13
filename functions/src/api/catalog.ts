@@ -159,10 +159,10 @@ export const ENGINE_CATALOG = [
       { key: "cap", type: "number", default: 3, label: "Plafond de points" },
       {
         key: "questions",
-        type: "json",
+        type: "questions",
         default: [],
         label: "Liste des questions",
-        help: 'Une entrée par question. Exemple : [{"id":"q1","metric":"TEAM_POINTS_SCORED","extreme":"MAX","points":1}] — metric : TEAM_POINTS_SCORED (points marqués), TEAM_POINTS_CONCEDED (points encaissés) ou WINNING_MARGIN (écart de victoire) ; extreme : MAX (le plus), MIN (le moins) ou MIN_AMONG_WINNERS (le moins parmi les vainqueurs).',
+        help: "Une ligne par question : la statistique visée, l'extrême cherché et les points. Le joueur répondra en désignant une équipe de la semaine.",
       },
     ],
   },
@@ -172,7 +172,13 @@ export const ENGINE_CATALOG = [
     description: "Poules ; 1er de poule → points.",
     playerInput: false,
     configFields: [
-      { key: "poolSize", type: "number", default: 4, label: "Joueurs par poule" },
+      {
+        key: "poolSize",
+        type: "number",
+        default: 4,
+        label: "Joueurs par poule",
+        help: "Les poules sont tirées au sort automatiquement au verrouillage de la semaine — tu peux les retirer ou les corriger à la main depuis la liste des bonus.",
+      },
       { key: "firstPlacePoints", type: "number", default: 3, label: "Points pour le premier de chaque poule" },
       {
         key: "tieRule",
@@ -190,13 +196,24 @@ export const ENGINE_CATALOG = [
     description: "Duos tirés au sort ; scores additionnés et classés.",
     playerInput: true,
     configFields: [
-      { key: "optIn", type: "boolean", default: true, label: "Inscription volontaire", help: "Si activé, chaque joueur décide s'il participe au tirage des duos." },
+      {
+        key: "optIn",
+        type: "boolean",
+        default: true,
+        label: "Inscription volontaire",
+        help: "Si activé, seuls les joueurs ayant coché « je participe » entrent dans le tirage, fait automatiquement au verrouillage de la semaine.",
+      },
       {
         key: "rankPoints",
-        type: "json",
+        type: "numbers",
         default: { first: 3, second: 1, last: -1 },
+        fields: [
+          { key: "first", label: "Duo 1er" },
+          { key: "second", label: "Duo 2e" },
+          { key: "last", label: "Duo dernier" },
+        ],
         label: "Points par place du duo",
-        help: 'Exemple : {"first":3,"second":1,"last":-1} — points du duo premier, du deuxième, et du dernier.',
+        help: "Les deux joueurs du duo reçoivent les mêmes points. La pénalité du dernier ne s'applique qu'à partir de trois duos.",
       },
     ],
   },
@@ -208,10 +225,10 @@ export const ENGINE_CATALOG = [
     configFields: [
       {
         key: "matchIds",
-        type: "json",
+        type: "matches",
         default: [],
         label: "Matchs du combiné",
-        help: 'Liste d\'identifiants de matchs, ex. ["abc123","def456"]. Les identifiants sont visibles après la création des matchs (étape 1).',
+        help: "Coche les matchs qui composent le combiné. Ils doivent être créés au préalable (étape 1).",
       },
       { key: "allCorrectPoints", type: "number", default: 3, label: "Points si tout le combiné est correct", help: "Une seule erreur et le bonus ne rapporte rien." },
     ],
@@ -225,10 +242,10 @@ export const ENGINE_CATALOG = [
       { key: "cap", type: "number", default: 3, label: "Plafond de points" },
       {
         key: "items",
-        type: "json",
+        type: "comboItems",
         default: [],
         label: "Matchs et quarterbacks",
-        help: 'Une entrée par match, dans l\'ordre : les points s\'arrêtent à la première erreur. Exemple : [{"id":"1","matchId":"abc123","qbHomePlayerId":"p_x","qbAwayPlayerId":"p_y"}] — le joueur répond OUI/NON à « ce QB va-t-il se faire intercepter ? ».',
+        help: "Une ligne par match, DANS L'ORDRE : les points s'arrêtent à la première erreur. Le joueur répondra OUI/NON à « ce QB va-t-il se faire intercepter ? » pour les deux quarterbacks.",
       },
     ],
   },

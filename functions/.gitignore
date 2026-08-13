@@ -1,5 +1,7 @@
 node_modules/
-lib/
+# Slash initial obligatoire : « lib/ » seul ignorerait AUSSI src/lib/, où vivent
+# auth.ts, firebase.ts, errors.ts et refs.ts. Ici on ne vise que la sortie de tsc.
+/lib/
 build-test/
 .env
 *.log

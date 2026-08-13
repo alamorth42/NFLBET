@@ -1,0 +1,19 @@
+# Dépendances & artefacts de build
+node_modules/
+functions/lib/
+functions/build-test/
+web/.next/
+web/out/
+web/next-env.d.ts
+
+# Secrets — jamais dans le dépôt
+.env
+.env.local
+*.env.local
+serviceAccount*.json
+*-service-account*.json
+
+# Outils
+.firebase/
+*.log
+.DS_Store

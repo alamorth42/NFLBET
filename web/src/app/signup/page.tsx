@@ -1,9 +1,13 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { afterAuthRoute } from "@/lib/auth-nav";
+import { authErrorMessage, finishGoogleRedirect, signInWithGoogle } from "@/lib/google-auth";
+
+/** Le pseudo saisi doit survivre à une connexion Google en pleine page. */
+const PSEUDO_KEY = "nflbet.pendingPseudo";
 
 /** Création de compte : e-mail / mot de passe ou Google, avec choix du pseudo. */
 export default function SignupPage() {
@@ -17,14 +21,29 @@ export default function SignupPage() {
   const clean = pseudo.trim();
   const pseudoOk = clean.length >= 2 && clean.length <= 24;
 
-  const fail = (e: any) => {
-    const map: Record<string, string> = {
-      "auth/email-already-in-use": "Un compte existe déjà avec cet e-mail.",
-      "auth/invalid-email": "E-mail invalide.",
-      "auth/weak-password": "Mot de passe trop court (6 caractères minimum).",
-      "auth/popup-closed-by-user": "Fenêtre Google fermée avant la fin.",
+  // Retour d'une inscription Google en pleine page : on repose le pseudo mis de
+  // côté avant le départ, sinon le compte s'appellerait comme sur Google.
+  useEffect(() => {
+    let alive = true;
+    finishGoogleRedirect().then(async (cred) => {
+      if (!alive || !cred) return;
+      let saved = "";
+      try {
+        saved = localStorage.getItem(PSEUDO_KEY) || "";
+        localStorage.removeItem(PSEUDO_KEY);
+      } catch {
+        /* pas bloquant */
+      }
+      if (saved) await updateProfile(cred.user, { displayName: saved });
+      router.replace(afterAuthRoute());
+    });
+    return () => {
+      alive = false;
     };
-    setErr(map[e.code] || e.message);
+  }, [router]);
+
+  const fail = (e: any) => {
+    setErr(authErrorMessage(e));
     setBusy(false);
   };
 
@@ -33,7 +52,13 @@ export default function SignupPage() {
     setBusy(true);
     setErr(null);
     try {
-      const cred = await signInWithPopup(auth, new GoogleAuthProvider());
+      localStorage.setItem(PSEUDO_KEY, clean);
+    } catch {
+      /* pas bloquant : sans stockage, on retombe sur le nom du compte Google */
+    }
+    try {
+      const cred = await signInWithGoogle();
+      if (!cred) return; // redirection en cours, la page part
       await updateProfile(cred.user, { displayName: clean });
       router.replace(afterAuthRoute());
     } catch (e: any) {

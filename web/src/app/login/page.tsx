@@ -1,9 +1,10 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { afterAuthRoute } from "@/lib/auth-nav";
+import { authErrorMessage, finishGoogleRedirect, signInWithGoogle } from "@/lib/google-auth";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -12,15 +13,20 @@ export default function LoginPage() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  const fail = (e: any) => {
-    const map: Record<string, string> = {
-      "auth/invalid-credential": "E-mail ou mot de passe incorrect.",
-      "auth/wrong-password": "E-mail ou mot de passe incorrect.",
-      "auth/user-not-found": "Aucun compte avec cet e-mail.",
-      "auth/invalid-email": "E-mail invalide.",
-      "auth/popup-closed-by-user": "Fenêtre Google fermée avant la fin.",
+  // Retour d'une connexion Google en pleine page (repli quand la popup est
+  // refusée) : la session est déjà établie, il ne reste qu'à router.
+  useEffect(() => {
+    let alive = true;
+    finishGoogleRedirect().then((cred) => {
+      if (alive && cred) router.replace(afterAuthRoute());
+    });
+    return () => {
+      alive = false;
     };
-    setErr(map[e.code] || e.message);
+  }, [router]);
+
+  const fail = (e: any) => {
+    setErr(authErrorMessage(e));
     setBusy(false);
   };
 
@@ -28,8 +34,8 @@ export default function LoginPage() {
     setBusy(true);
     setErr(null);
     try {
-      await signInWithPopup(auth, new GoogleAuthProvider());
-      router.replace(afterAuthRoute());
+      // `null` = bascule en redirection : la page part, on ne route pas ici.
+      if (await signInWithGoogle()) router.replace(afterAuthRoute());
     } catch (e: any) {
       fail(e);
     }
