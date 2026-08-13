@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import { ActionButton } from "@/components/ActionButton";
 import { C, StateBadge } from "@/components/ui";
 import { fmtDateTime } from "@/lib/format";
+import { publicOrigin } from "@/lib/publicUrl";
 import { Bonus, EngineMeta, Match, Member, Player, Season, Team, Week, WeekState } from "@/lib/types";
 
 /**
@@ -396,7 +397,7 @@ function WeekRecap({
   bonuses: Bonus[];
   say: (m: string) => void;
 }) {
-  const link = typeof window !== "undefined" ? `${window.location.origin}/l/${lid}/week/${week}` : "";
+  const link = `${publicOrigin()}/l/${lid}/week/${week}`;
   const text = [
     `🏈 ${leagueName || "NFL BET"} — WEEK ${String(week).padStart(2, "0")}`,
     weekDoc?.deadlineAt
@@ -458,7 +459,7 @@ function InviteBlock({ lid, code, onDone }: { lid: string; code?: string; onDone
   const [current, setCurrent] = useState<string | undefined>(code);
   useEffect(() => setCurrent(code), [code]);
 
-  const link = current && typeof window !== "undefined" ? `${window.location.origin}/join/${current}` : "";
+  const link = current ? `${publicOrigin()}/join/${current}` : "";
 
   const regen = async () => {
     const r = await api<{ inviteCode: string }>("POST", `/leagues/${lid}/invite-code`, {});

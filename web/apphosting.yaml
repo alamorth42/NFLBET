@@ -40,6 +40,13 @@ env:
     value: 1:562116480545:web:d3cef684244cac6acc9d60
     availability: [BUILD, RUNTIME]
 
+  # Adresse canonique de l'app : c'est elle qui part dans les liens partagés
+  # (annonce de la semaine, invitation), quelle que soit l'URL par laquelle le
+  # commissaire est entré — l'URL `*.hosted.app` reste joignable.
+  - variable: NEXT_PUBLIC_PUBLIC_URL
+    value: https://nflbet.fr
+    availability: [BUILD, RUNTIME]
+
   # API REST (Cloud Function `api`, région europe-west1).
   - variable: NEXT_PUBLIC_API_BASE
     value: https://europe-west1-nflbet-71b92.cloudfunctions.net/api
